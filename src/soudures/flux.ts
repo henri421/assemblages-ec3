@@ -5,9 +5,17 @@
  * moments en kN.m.
  *
  * Chaque ame porte deux cordons d angle, un de chaque cote. On nomme
- * `exterieur` le cordon tourne vers le bord de la platine, `interieur` celui
- * tourne vers le percage. Seule l ame la plus chargee est examinee : l autre
+ * `interieur` le cordon tourne vers le tirant, `exterieur` celui tourne vers
+ * le bord de la platine. Seule l ame la plus chargee est examinee : l autre
  * l est moins, par construction.
+ *
+ * Modele de transmission (voir docs/validation/vasse.md). La couronne pousse
+ * la platine vers le support, entre les ames. On retient le modele de la
+ * platine PORTEE PAR LES AMES : la platine franchit l entraxe e et se
+ * suspend aux deux ames, qui reportent la charge sur leur longueur (poutres en
+ * te sur le beton) ou jusqu aux appuis (poutre sur lierne). En appui continu,
+ * c est une borne : le beton situe sous la couronne en porte directement une
+ * partie, que ce modele ignore.
  */
 
 import type { Assemblage } from '../model/assemblage';
@@ -30,8 +38,8 @@ export interface DonneesFlux {
   f_y_platine: number;
   /** Limite elastique des ames (MPa). */
   f_y_ame: number;
-  /** Requis si le schema est `appui-extremites`. */
-  ame?: ProprietesAme;
+  /** Proprietes de la section en te d une ame. */
+  ame: ProprietesAme;
 }
 
 /** Borne qui fixe le moment local transmis au cordon. */
@@ -40,7 +48,7 @@ export type BorneMomentLocal = 'encastrement' | 'platine' | 'ame';
 export interface CasCordon {
   id: string;
   /** Cordon concerne. */
-  cordon: 'exterieur' | 'interieur';
+  cordon: 'interieur' | 'exterieur';
   /** Description en clair du cas examine. */
   libelle: string;
   efforts: EffortsLineiques;
@@ -55,10 +63,8 @@ export interface FluxSoudures {
   part: number;
   /** Distance de l axe du tirant a l ame la plus chargee (mm). */
   x_charge: number;
-  /** Flux transversal par ame, part * N_Ed / l_charge (kN/mm). */
+  /** Suspension de la platine a l ame, part * N_Ed / l_charge (kN/mm). */
   F_Ed: number;
-  /** Faux si le contact direct court-circuite la gorge en compression. */
-  compressionDansLaGorge: boolean;
   /** Moment d encastrement parfait de la platine sur l ame la plus chargee (kN.m). */
   M_encastrement: number;
   /** Le meme, par unite de longueur chargee (kN.mm/mm = kN). */
@@ -73,12 +79,14 @@ export interface FluxSoudures {
   borne: BorneMomentLocal;
   /** Bras de levier entre les deux cordons d une ame, t_w + a (mm). */
   bras: number;
-  /** Traction du moment local sur le cordon exterieur, m_Ed / (t_w + a) (kN/mm). */
+  /** Couple du moment local sur les cordons, m_Ed / (t_w + a) (kN/mm). */
   delta_F: number;
-  /** Effort tranchant de l ame la plus chargee (kN), nul en appui continu. */
+  /** Effort tranchant de la poutre en te de l ame la plus chargee (kN). */
   V_Ed: number;
-  /** Flux longitudinal par ame, V_Ed S_f / I (kN/mm), nul en appui continu. */
+  /** Flux longitudinal par ame, V_Ed S_f / I (kN/mm). */
   v_Ed: number;
+  /** Appui aux extremites : longueur d appui (mm), null en appui continu. */
+  l_appui: number | null;
   /** Flux tangentiel par cordon, H_Ed / (4 l_eff) (kN/mm). */
   h_Ed: number;
   cas: CasCordon[];
@@ -95,10 +103,10 @@ function positif(v: number | undefined, nom: string, unite: string): number {
  * Longueur de cordon chargee par la couronne, min(l_eff ; D + 2t).
  *
  * La couronne de diametre D se diffuse a 45 degres dans l epaisseur de la
- * platine : au droit des cordons, sur la face opposee, elle occupe D + 2t.
- * Repartir l effort sur toute la longueur du cordon, comme le ferait un flux
- * N / (2 l_eff), le supposerait uniforme sur des ames eventuellement bien plus
- * longues que la couronne : c est non conservatif des que L_w depasse D + 2t.
+ * platine : au droit des cordons, elle occupe D + 2t. Repartir l effort sur
+ * toute la longueur du cordon, comme le ferait un flux N / (2 l_eff), le
+ * supposerait uniforme sur des ames eventuellement bien plus longues que la
+ * couronne : c est non conservatif des que L_w depasse D + 2t.
  */
 export function longueurChargee(l_eff: number, D: number, t: number): number {
   return Math.min(l_eff, D + 2 * t);
@@ -119,41 +127,52 @@ export function momentDEncastrement(P: number, x: number, e: number): number {
 }
 
 /**
+ * Longueur d appui de chaque extremite en appui aux extremites (mm).
+ *
+ * Sur lierne, la largeur de la semelle chargee en tient lieu si la longueur
+ * d appui n est pas donnee : c est sur elle que la platine repose.
+ */
+export function longueurDAppui(assemblage: Assemblage): number {
+  const { appui } = assemblage;
+  const l = appui.l_appui ?? (appui.type === 'lierne-acier' ? appui.b_f_lierne : undefined);
+  return positif(l, "La longueur d appui l_appui de chaque extremite", 'mm');
+}
+
+/**
  * Efforts lineiques sur les deux cordons de l ame la plus chargee.
  *
- * Trois contributions, superposees :
+ * Contributions superposees :
  *
- * 1. Flux transversal, compression de la platine sur l ame :
- *    F_Ed = part * N_Ed / l_charge par ame, la moitie par cordon, en
- *    compression de la gorge (p_1 < 0). Si `contactDirect`, la compression
- *    transite par contact et ce terme est retire de la gorge.
+ * 1. Suspension de la platine : la couronne pousse la platine vers le support,
+ *    les ames la retiennent. F_Ed = part * N_Ed / l_charge par ame, la moitie
+ *    par cordon, en TRACTION de la gorge (p_1 > 0). Le contact direct n y
+ *    change rien : un contact ne transmet pas de traction.
  *
  * 2. Moment local d encastrement de la platine sur l ame :
- *    delta_F = m_Ed / (t_w + a), traction sur le cordon exterieur, compression
- *    sur l interieur. La platine flechit entre les ames et se souleve au-dela :
- *    c est le cordon exterieur qu elle arrache.
- *    m_Ed est le plus petit de l encastrement parfait et des moments
- *    plastiques lineiques de la platine et de l ame. Le noeud ne peut pas
- *    transmettre plus que ce que la plus faible des deux pieces developpe :
- *    au-dela, elle plastifie et le moment se reporte en travee, ou la
- *    verification de la platine le retrouve (borne en appuis simples N e / 4).
+ *    delta_F = m_Ed / (t_w + a). La platine flechit entre les ames, en
+ *    s eloignant d elles : elle arrache le cordon INTERIEUR et comprime
+ *    l exterieur. m_Ed est le plus petit de l encastrement parfait et des
+ *    moments plastiques lineiques de la platine et de l ame — le noeud ne
+ *    transmet pas plus que ce que la plus faible des deux pieces developpe.
  *    Ces moments plastiques sont pris SANS coefficient partiel : ce sont des
- *    bornes de ce que la piece transmet reellement, pas des resistances de
- *    calcul — les diviser par gamma_M0 minorerait l action sur le cordon.
- *    Avec `contactDirect`, la moitie comprimee du couple passe elle aussi par
- *    contact ; la moitie tendue, non.
- *    CE TERME N EST JAMAIS OMIS, MEME AVEC `contactDirect` : c est precisement
- *    lui qui remet de la traction dans la gorge sous un effort global de
- *    compression, et la cause la plus frequente de fissuration en pied de
- *    cordon sur ce type de piece.
+ *    bornes de l action reelle, pas des resistances de calcul.
+ *    CE TERME N EST JAMAIS OMIS, MEME AVEC `contactDirect` : c est lui qui
+ *    met la racine du cordon en traction, cause la plus frequente de
+ *    fissuration en pied de cordon sur ce type de piece. Le contact direct ne
+ *    retire que la part COMPRIMEE du couple sur le cordon exterieur.
  *
- * 3. Appui aux extremites seulement, flux longitudinal de la section composee :
- *    v_Ed = V_Ed S_f / I par ame, la moitie par cordon.
+ * 3. Flux longitudinal de la poutre en te : v_Ed = V_Ed S_f / I par ame, la
+ *    moitie par cordon. En appui continu, V_Ed est l effort tranchant de la
+ *    poutre en te qui repartit la charge sur L_w sous une pression uniforme ;
+ *    en appui aux extremites, la reaction d appui part * N_Ed / 2.
+ *
+ * 4. Appui aux extremites seulement : au droit de l appui, la reaction
+ *    comprime la platine contre le chant de l ame, sur la longueur d appui.
+ *    Retire de la gorge avec `contactDirect`.
  *
  * Si une composante tangentielle H_Ed existe (inclinaison > 3 degres), elle
  * est repartie sur les quatre cordons et examinee dans les trois directions
- * possibles — le long des ames, et a travers elles dans les deux sens — faute
- * de connaitre l azimut de l inclinaison.
+ * possibles, faute de connaitre l azimut de l inclinaison.
  */
 export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
   const { platine, plats, soudure, ancrage, schema } = d.assemblage;
@@ -165,6 +184,10 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
   const D = positif(ancrage.D, 'Le diametre de couronne D', 'mm');
   const L_w = positif(plats.L_w, 'La longueur d ame L_w', 'mm');
   const l_eff = positif(soudure.l_eff ?? L_w, 'La longueur efficace du cordon l_eff', 'mm');
+  const f_y_platine = positif(d.f_y_platine, 'La limite elastique de la platine f_y', 'MPa');
+  const f_y_ame = positif(d.f_y_ame, 'La limite elastique des ames f_y', 'MPa');
+  const S_f = positif(d.ame.S_f, 'Le moment statique S_f', 'mm3');
+  const I = positif(d.ame.I, 'L inertie I', 'mm4');
   const H_Ed = d.H_Ed ?? 0;
   if (!Number.isFinite(H_Ed) || H_Ed < 0) {
     throw new Error('La composante tangentielle H_Ed doit etre un nombre positif ou nul (kN).');
@@ -179,14 +202,9 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
   const l_charge = longueurChargee(l_eff, D, t);
   const part = 0.5 + Math.abs(ex) / e;
   const x_charge = e / 2 - Math.abs(ex);
-
   const F_Ed = (part * N_Ed) / l_charge;
-  const compressionDansLaGorge = !soudure.contactDirect;
 
-  const f_y_platine = positif(d.f_y_platine, 'La limite elastique de la platine f_y', 'MPa');
-  const f_y_ame = positif(d.f_y_ame, 'La limite elastique des ames f_y', 'MPa');
-
-  // kN * mm -> kN.m ; par unite de longueur : kN.mm / mm = kN.
+  // kN * mm ; par unite de longueur : kN.mm / mm = kN.
   const M_kNmm = momentDEncastrement(N_Ed, x_charge, e);
   const m_encastrement = M_kNmm / l_charge;
   // N.mm/mm -> kN : division par 1000.
@@ -205,55 +223,73 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
   const bras = t_w + a;
   const delta_F = m_Ed / bras;
 
-  let V_Ed = 0;
-  let v_Ed = 0;
+  let V_Ed: number;
+  let l_appui: number | null = null;
   if (schema === 'appui-extremites') {
-    if (d.ame === undefined) {
-      throw new Error("Les proprietes de la section composee sont requises en appui aux extremites.");
-    }
-    const S_f = positif(d.ame.S_f, 'Le moment statique S_f', 'mm3');
-    const I = positif(d.ame.I, 'L inertie I', 'mm4');
     V_Ed = (part * N_Ed) / 2;
-    v_Ed = (V_Ed * S_f) / I;
+    l_appui = longueurDAppui(d.assemblage);
+  } else {
+    // Poutre en te sous charge centrale part*N sur l_charge, equilibree par
+    // une pression uniforme sur L_w : tranchant maximal au bord de la zone
+    // chargee.
+    V_Ed = (part * N_Ed * (L_w - Math.min(l_charge, L_w))) / (2 * L_w);
   }
+  const v_Ed = (V_Ed * S_f) / I;
 
   const h_Ed = H_Ed / (4 * l_eff);
-  const compression = compressionDansLaGorge ? -F_Ed / 2 : 0;
+  const contact = soudure.contactDirect;
+  const sansCompressionSiContact = (p: number): number => (contact && p < 0 ? 0 : p);
 
-  const base: Record<'exterieur' | 'interieur', EffortsLineiques> = {
-    exterieur: { p_1: compression + delta_F, p_2: 0, p_para: v_Ed / 2 },
-    interieur: {
-      p_1: compression - (compressionDansLaGorge ? delta_F : 0),
-      p_2: 0,
-      p_para: v_Ed / 2,
+  const base: Array<{ cordon: 'interieur' | 'exterieur'; id: string; libelle: string; efforts: EffortsLineiques }> = [
+    {
+      cordon: 'interieur',
+      id: 'interieur',
+      libelle: 'cordon interieur, zone chargee',
+      efforts: { p_1: F_Ed / 2 + delta_F, p_2: 0, p_para: v_Ed / 2 },
     },
-  };
+    {
+      cordon: 'exterieur',
+      id: 'exterieur',
+      libelle: 'cordon exterieur, zone chargee',
+      efforts: { p_1: sansCompressionSiContact(F_Ed / 2 - delta_F), p_2: 0, p_para: v_Ed / 2 },
+    },
+  ];
+  if (l_appui !== null) {
+    const p_appui = sansCompressionSiContact(-V_Ed / (2 * l_appui));
+    for (const cordon of ['interieur', 'exterieur'] as const) {
+      base.push({
+        cordon,
+        id: `${cordon}-appui`,
+        libelle: `cordon ${cordon}, au droit de l appui`,
+        efforts: { p_1: p_appui, p_2: 0, p_para: v_Ed / 2 },
+      });
+    }
+  }
 
   const cas: CasCordon[] = [];
-  for (const cordon of ['exterieur', 'interieur'] as const) {
-    const b = base[cordon];
+  for (const b of base) {
     if (h_Ed === 0) {
-      cas.push({ id: cordon, cordon, libelle: `cordon ${cordon}`, efforts: b });
+      cas.push(b);
       continue;
     }
     cas.push(
       {
-        id: `${cordon}-H-long`,
-        cordon,
-        libelle: `cordon ${cordon}, H le long des ames`,
-        efforts: { ...b, p_para: b.p_para + h_Ed },
+        ...b,
+        id: `${b.id}-H-long`,
+        libelle: `${b.libelle}, H le long des ames`,
+        efforts: { ...b.efforts, p_para: b.efforts.p_para + h_Ed },
       },
       {
-        id: `${cordon}-H-vers`,
-        cordon,
-        libelle: `cordon ${cordon}, H pousse l ame vers le cordon`,
-        efforts: { ...b, p_2: h_Ed },
+        ...b,
+        id: `${b.id}-H-vers`,
+        libelle: `${b.libelle}, H pousse l ame vers le cordon`,
+        efforts: { ...b.efforts, p_2: h_Ed },
       },
       {
-        id: `${cordon}-H-hors`,
-        cordon,
-        libelle: `cordon ${cordon}, H tire l ame hors du cordon`,
-        efforts: { ...b, p_2: -h_Ed },
+        ...b,
+        id: `${b.id}-H-hors`,
+        libelle: `${b.libelle}, H tire l ame hors du cordon`,
+        efforts: { ...b.efforts, p_2: -h_Ed },
       },
     );
   }
@@ -264,7 +300,6 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
     part,
     x_charge,
     F_Ed,
-    compressionDansLaGorge,
     M_encastrement: M_kNmm / 1000,
     m_encastrement,
     m_pl_platine,
@@ -275,6 +310,7 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
     delta_F,
     V_Ed,
     v_Ed,
+    l_appui,
     h_Ed,
     cas,
   };

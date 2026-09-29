@@ -1,22 +1,29 @@
 import type { Assemblage } from '../../src/model/assemblage';
 
 /**
- * Chaise de reference « VASSE-1 » (docs/validation/vasse.md), appui continu
- * sur beton, S235, N_Ed = 1000 kN.
+ * Chaise de reference « VASSE-1 » (docs/validation/vasse.md) : platine posee
+ * sur beton (appui continu), deux ames raidisseuses sur sa face libre, S235,
+ * N_Ed = 1000 kN.
  *
  * Platine 300 x 300 x 30, percage 80 ; ames 20 x 150 x 300 a 220 d entraxe ;
  * cordons de gorge 10 ; couronne D = 150 ; beton C30/37.
  *
- * Valeurs attendues, calculees a la main :
+ * Section en te d une ame (eps = 1) :
+ *   b_eff,max = min(220/4 ; 15*30) = 55 ; b_int = 55 ; b_ext = min(55 ; 40 - 10) = 30
+ *   B_f = 105 ; A = 3150 + 3000 = 6150 mm2 ; z_G = 362250 / 6150 = 58,902439 mm
+ *   I = 18 307 591,46 mm4 ; S_f = 3150 * 43,902439 = 138 292,68 mm3
+ *
+ * Soudures, valeurs calculees a la main :
  *   l_charge = min(300 ; 150 + 2*30) = 210 mm
- *   F_Ed     = 0,5 * 1000 / 210 = 2,380952 kN/mm par ame
+ *   F_Ed     = 0,5 * 1000 / 210 = 2,380952 kN/mm par ame (suspension)
  *   M_enc    = 1000 * 220 / 8 = 27,5 kN.m ; m_enc = 27500 / 210 = 130,952 kN
  *   m_pl,p   = 30^2 * 235 / 4 = 52,875 kN ; m_pl,w = 20^2 * 235 / 4 = 23,5 kN
  *   m_Ed     = 23,5 kN (borne : ame) ; delta_F = 23,5 / (20 + 10) = 0,783333 kN/mm
- *   p_1 ext  = -1,190476 + 0,783333 = -0,407143 kN/mm
- *   p_1 int  = -1,190476 - 0,783333 = -1,973810 kN/mm
- *   cordon interieur : sigma_perp = tau_perp = -139,5694 MPa, equivalente
- *   279,1388 MPa, taux 279,1388 / 360 = 0,775386
+ *   V_te     = 500 * (300 - 210) / 600 = 75 kN ; v = 75 * S_f / I = 0,566538 kN/mm
+ *   interieur : p_1 = 1,190476 + 0,783333 = 1,973810 ; p_para = 0,283269 kN/mm
+ *   exterieur : p_1 = 1,190476 - 0,783333 = 0,407143 kN/mm
+ *   interieur : sigma_perp = tau_perp = 139,5694 MPa, tau_para = 28,3269 MPa,
+ *               equivalente 283,4179 MPa, taux 0,787272 ; taux 2 = 0,538462
  */
 export function chaiseDeReference(): Assemblage {
   return {
@@ -28,3 +35,6 @@ export function chaiseDeReference(): Assemblage {
     schema: 'appui-continu',
   };
 }
+
+/** Section en te de la chaise de reference, hors percage. */
+export const AME_DE_REFERENCE = { S_f: 138292.6829268293, I: 18307591.46341463 };
