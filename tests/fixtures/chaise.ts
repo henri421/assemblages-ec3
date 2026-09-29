@@ -38,3 +38,15 @@ export function chaiseDeReference(): Assemblage {
 
 /** Section en te de la chaise de reference, hors percage. */
 export const AME_DE_REFERENCE = { S_f: 138292.6829268293, I: 18307591.46341463 };
+
+/**
+ * Variante « VASSE-2 » : la meme chaise franchit l espace entre les deux U
+ * d une lierne (UPN 220, S235), portee L = 300 mm dans le sens des ames.
+ */
+export function chaiseSurLierne(): Assemblage {
+  const a = chaiseDeReference();
+  a.schema = 'appui-extremites';
+  a.plats.L = 300;
+  a.appui = { type: 'lierne-acier', t_w_lierne: 9, h_w_lierne: 195, t_f_lierne: 12.5, b_f_lierne: 80 };
+  return a;
+}

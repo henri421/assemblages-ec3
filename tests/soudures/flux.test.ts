@@ -6,20 +6,12 @@ import {
   longueurDAppui,
   momentDEncastrement,
 } from '../../src/soudures/flux';
-import type { Assemblage } from '../../src/model/assemblage';
-import { AME_DE_REFERENCE, chaiseDeReference } from '../fixtures/chaise';
+import { AME_DE_REFERENCE, chaiseDeReference, chaiseSurLierne as surLierne } from '../fixtures/chaise';
 
 /** Appui continu : pression et largeurs fixees a la main, pour des valeurs exactes. */
 const CONTINU = { sigma_c: 12, w_s: 62.5, b_ext: 30 };
 const COMMUN = { f_y_platine: 235, f_y_ame: 235, ame: AME_DE_REFERENCE };
 
-function surLierne(): Assemblage {
-  const a = chaiseDeReference();
-  a.schema = 'appui-extremites';
-  a.plats.L = 600;
-  a.appui = { type: 'lierne-acier', t_w_lierne: 8, h_w_lierne: 200, t_f_lierne: 12, b_f_lierne: 90 };
-  return a;
-}
 
 describe('longueurChargee', () => {
   it('diffusion a 45 degres dans la platine, bornee par le cordon', () => {
@@ -113,7 +105,7 @@ describe('fluxDansLesCordons — appui aux extremites, suspension', () => {
    * m_enc = 27500 / 210 = 130,952 -> borne par l ame : 23,5 kN ; delta_F = 0,783333
    * V = 250 kN ; v = 250 * 138292,68 / 18307591,46 = 1,888461 kN/mm
    * interieur : 1,190476 + 0,783333 = 1,973810 ; exterieur : 0,407143
-   * appui : p_1 = -250 / (2 * 90) = -1,388889 kN/mm
+   * appui : p_1 = -250 / (2 * 80) = -1,5625 kN/mm
    */
   const f = fluxDansLesCordons({ assemblage: surLierne(), N_Ed: 1000, ...COMMUN });
 
@@ -133,9 +125,9 @@ describe('fluxDansLesCordons — appui aux extremites, suspension', () => {
   it('flux longitudinal et cas au droit de l appui', () => {
     expect(f.V_Ed).toBe(250);
     expect(f.v_Ed).toBeCloseTo(1.888461, 6);
-    expect(f.l_appui).toBe(90);
+    expect(f.l_appui).toBe(80);
     const appui = f.cas.find((c) => c.id === 'interieur-appui');
-    expect(appui?.efforts.p_1).toBeCloseTo(-1.388889, 6);
+    expect(appui?.efforts.p_1).toBeCloseTo(-1.5625, 12);
     expect(appui?.efforts.p_para).toBeCloseTo(0.9442305, 6);
     expect(f.cas).toHaveLength(4);
   });
@@ -148,7 +140,7 @@ describe('fluxDansLesCordons — appui aux extremites, suspension', () => {
   });
 
   it('longueurDAppui : la semelle de lierne en tient lieu', () => {
-    expect(longueurDAppui(surLierne())).toBe(90);
+    expect(longueurDAppui(surLierne())).toBe(80);
     const b = surLierne();
     b.appui = { type: 'beton', f_ck: 30 };
     expect(() => longueurDAppui(b)).toThrow(/longueur d appui/);

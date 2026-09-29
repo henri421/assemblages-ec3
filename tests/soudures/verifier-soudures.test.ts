@@ -3,16 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { fluxDansLesCordons } from '../../src/soudures/flux';
 import { gorgePleineResistance } from '../../src/soudures/pleine-resistance';
 import { verifierSoudures } from '../../src/soudures/verifier-soudures';
-import type { Assemblage } from '../../src/model/assemblage';
-import { AME_DE_REFERENCE, chaiseDeReference } from '../fixtures/chaise';
+import { AME_DE_REFERENCE, chaiseSurLierne as surLierne } from '../fixtures/chaise';
 
-function surLierne(): Assemblage {
-  const a = chaiseDeReference();
-  a.schema = 'appui-extremites';
-  a.plats.L = 600;
-  a.appui = { type: 'lierne-acier', t_w_lierne: 8, h_w_lierne: 200, t_f_lierne: 12, b_f_lierne: 90 };
-  return a;
-}
 
 const S235 = { f_u: 360, beta_w: 0.8, gamma_M2: 1.25 };
 const PLEINE = gorgePleineResistance({
