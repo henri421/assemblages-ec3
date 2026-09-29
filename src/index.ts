@@ -85,3 +85,14 @@ export {
 
 export { FORMAT, VERSION, serialiser, type FichierModele, type TypeDetail } from './persistance/format-modele';
 export { lireModele } from './persistance/parse';
+
+export { verifierTe, type DonneesTe, type NatureTe, type ResultatTe, type SoudureTe } from './details/te';
+export {
+  reductionAssemblageLong,
+  verifierRecouvrement,
+  type DonneesRecouvrement,
+  type ResultatRecouvrement,
+} from './details/recouvrement';
+export { verifierProfilePlatine, type DonneesProfile, type ResultatProfile } from './details/profile-platine';
+export type { ResultatCordons, VerdictDetail, VerificationPoint } from './details/commun';
+export type { Modele } from './persistance/format-modele';
