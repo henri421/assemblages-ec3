@@ -10,12 +10,14 @@
  * l est moins, par construction.
  *
  * Modele de transmission (voir docs/validation/vasse.md). La couronne pousse
- * la platine vers le support, entre les ames. On retient le modele de la
- * platine PORTEE PAR LES AMES : la platine franchit l entraxe e et se
- * suspend aux deux ames, qui reportent la charge sur leur longueur (poutres en
- * te sur le beton) ou jusqu aux appuis (poutre sur lierne). En appui continu,
- * c est une borne : le beton situe sous la couronne en porte directement une
- * partie, que ce modele ignore.
+ * la platine vers le support, entre les ames.
+ *
+ * - Appui continu : la platine porte sur le beton (troncon en te, §6.2.5).
+ *   Chaque ame collecte la pression d appui sous sa bande de largeur w_s et
+ *   la reporte, en poutre en te, vers la zone de la couronne.
+ * - Appui aux extremites : rien ne porte la platine entre ses appuis. Elle
+ *   franchit l entraxe e et se SUSPEND aux deux ames, qui reportent la charge
+ *   jusqu aux appuis en poutre de portee L.
  */
 
 import type { Assemblage } from '../model/assemblage';
@@ -40,10 +42,22 @@ export interface DonneesFlux {
   f_y_ame: number;
   /** Proprietes de la section en te d une ame. */
   ame: ProprietesAme;
+  /** Requis en appui continu : resultat du troncon en te (§6.2.5). */
+  appuiContinu?: AppuiContinu;
+}
+
+/** Ce que le troncon en te transmet aux ames en appui continu. */
+export interface AppuiContinu {
+  /** Pression moyenne sous l aire efficace (MPa). */
+  sigma_c: number;
+  /** Largeur de platine dont chaque ame collecte la pression (mm) ; 0 si les ames sont hors contour. */
+  w_s: number;
+  /** Debord exterieur charge au-dela de l ame (mm). */
+  b_ext: number;
 }
 
 /** Borne qui fixe le moment local transmis au cordon. */
-export type BorneMomentLocal = 'encastrement' | 'platine' | 'ame';
+export type BorneMomentLocal = 'elastique' | 'platine' | 'ame';
 
 export interface CasCordon {
   id: string;
@@ -63,12 +77,18 @@ export interface FluxSoudures {
   part: number;
   /** Distance de l axe du tirant a l ame la plus chargee (mm). */
   x_charge: number;
-  /** Suspension de la platine a l ame, part * N_Ed / l_charge (kN/mm). */
+  /**
+   * Effort transversal par ame et par unite de longueur, traction positive
+   * (kN/mm) : suspension part * N_Ed / l_charge aux extremites, pression
+   * collectee -sigma_c w_s en appui continu.
+   */
   F_Ed: number;
-  /** Moment d encastrement parfait de la platine sur l ame la plus chargee (kN.m). */
-  M_encastrement: number;
-  /** Le meme, par unite de longueur chargee (kN.mm/mm = kN). */
-  m_encastrement: number;
+  /**
+   * Moment local lineique avant bornes (kN) : encastrement parfait de la
+   * platine sur l ame aux extremites, console du debord exterieur
+   * sigma_c b_ext^2 / 2 en appui continu.
+   */
+  m_elastique: number;
   /** Moment plastique lineique de la platine, t^2 f_y / 4 (kN). */
   m_pl_platine: number;
   /** Moment plastique lineique de l ame, t_w^2 f_y / 4 (kN). */
@@ -143,28 +163,34 @@ export function longueurDAppui(assemblage: Assemblage): number {
  *
  * Contributions superposees :
  *
- * 1. Suspension de la platine : la couronne pousse la platine vers le support,
- *    les ames la retiennent. F_Ed = part * N_Ed / l_charge par ame, la moitie
- *    par cordon, en TRACTION de la gorge (p_1 > 0). Le contact direct n y
- *    change rien : un contact ne transmet pas de traction.
+ * 1. Effort transversal entre platine et ame.
+ *    - Extremites, SUSPENSION : la couronne pousse la platine vers le
+ *      support, les ames la retiennent. F_Ed = part * N_Ed / l_charge par
+ *      ame, la moitie par cordon, en TRACTION de la gorge (p_1 > 0). Le
+ *      contact direct n y change rien : un contact ne transmet pas de traction.
+ *    - Continu, PRESSION COLLECTEE : le beton pousse la bande w_s de platine
+ *      contre l ame. F_Ed = -sigma_c w_s, en compression de la gorge, retiree
+ *      de la gorge avec `contactDirect`.
  *
- * 2. Moment local d encastrement de la platine sur l ame :
- *    delta_F = m_Ed / (t_w + a). La platine flechit entre les ames, en
- *    s eloignant d elles : elle arrache le cordon INTERIEUR et comprime
- *    l exterieur. m_Ed est le plus petit de l encastrement parfait et des
- *    moments plastiques lineiques de la platine et de l ame — le noeud ne
- *    transmet pas plus que ce que la plus faible des deux pieces developpe.
- *    Ces moments plastiques sont pris SANS coefficient partiel : ce sont des
- *    bornes de l action reelle, pas des resistances de calcul.
+ * 2. Moment local de la platine sur l ame : delta_F = m_Ed / (t_w + a).
+ *    - Extremites : encastrement de la platine qui franchit e. Elle flechit
+ *      en s eloignant des ames et arrache le cordon INTERIEUR.
+ *    - Continu : console du debord exterieur, poussee par le beton vers
+ *      l ame. Elle comprime le cordon exterieur et arrache l INTERIEUR.
+ *    m_Ed est le plus petit du moment elastique et des moments plastiques
+ *    lineiques de la platine et de l ame : le noeud ne transmet pas plus que
+ *    ce que la plus faible des deux pieces developpe. Ces moments plastiques
+ *    sont pris SANS coefficient partiel : ce sont des bornes de l action
+ *    reelle, pas des resistances de calcul.
  *    CE TERME N EST JAMAIS OMIS, MEME AVEC `contactDirect` : c est lui qui
  *    met la racine du cordon en traction, cause la plus frequente de
- *    fissuration en pied de cordon sur ce type de piece. Le contact direct ne
- *    retire que la part COMPRIMEE du couple sur le cordon exterieur.
+ *    fissuration en pied de cordon sur ce type de piece. Le contact direct
+ *    ne retire que des COMPRESSIONS.
  *
  * 3. Flux longitudinal de la poutre en te : v_Ed = V_Ed S_f / I par ame, la
  *    moitie par cordon. En appui continu, V_Ed est l effort tranchant de la
- *    poutre en te qui repartit la charge sur L_w sous une pression uniforme ;
- *    en appui aux extremites, la reaction d appui part * N_Ed / 2.
+ *    poutre en te qui ramene la pression collectee sur L_w vers la zone de la
+ *    couronne ; en appui aux extremites, la reaction d appui part * N_Ed / 2.
  *
  * 4. Appui aux extremites seulement : au droit de l appui, la reaction
  *    comprime la platine contre le chant de l ame, sur la longueur d appui.
@@ -202,16 +228,40 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
   const l_charge = longueurChargee(l_eff, D, t);
   const part = 0.5 + Math.abs(ex) / e;
   const x_charge = e / 2 - Math.abs(ex);
-  const F_Ed = (part * N_Ed) / l_charge;
 
-  // kN * mm ; par unite de longueur : kN.mm / mm = kN.
-  const M_kNmm = momentDEncastrement(N_Ed, x_charge, e);
-  const m_encastrement = M_kNmm / l_charge;
+  let F_Ed: number;
+  let m_elastique: number;
+  let V_Ed: number;
+  let l_appui: number | null = null;
+  if (schema === 'appui-extremites') {
+    F_Ed = (part * N_Ed) / l_charge;
+    // kN * mm, puis par unite de longueur : kN.mm / mm = kN.
+    m_elastique = momentDEncastrement(N_Ed, x_charge, e) / l_charge;
+    V_Ed = (part * N_Ed) / 2;
+    l_appui = longueurDAppui(d.assemblage);
+  } else {
+    if (d.appuiContinu === undefined) {
+      throw new Error("Le resultat du troncon en te est requis en appui continu.");
+    }
+    const { sigma_c, w_s, b_ext } = d.appuiContinu;
+    if (![sigma_c, w_s, b_ext].every((v) => Number.isFinite(v) && v >= 0)) {
+      throw new Error(
+        'La pression d appui sigma_c et les largeurs w_s, b_ext doivent etre positives ou nulles.',
+      );
+    }
+    // MPa * mm = N/mm -> kN/mm ; MPa * mm2 / mm = N -> kN.
+    F_Ed = -(sigma_c * w_s) / 1000;
+    m_elastique = w_s === 0 ? 0 : (sigma_c * b_ext ** 2) / 2 / 1000;
+    // Poutre en te chargee par la pression sur L_w, portee par la zone de la
+    // couronne : tranchant au bord de cette zone.
+    V_Ed = (sigma_c * w_s * Math.max(0, L_w - D)) / 2 / 1000;
+  }
+
   // N.mm/mm -> kN : division par 1000.
   const m_pl_platine = (t ** 2 * f_y_platine) / 4 / 1000;
   const m_pl_ame = (t_w ** 2 * f_y_ame) / 4 / 1000;
-  let m_Ed = m_encastrement;
-  let borne: BorneMomentLocal = 'encastrement';
+  let m_Ed = m_elastique;
+  let borne: BorneMomentLocal = 'elastique';
   if (m_pl_platine < m_Ed) {
     m_Ed = m_pl_platine;
     borne = 'platine';
@@ -222,36 +272,27 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
   }
   const bras = t_w + a;
   const delta_F = m_Ed / bras;
-
-  let V_Ed: number;
-  let l_appui: number | null = null;
-  if (schema === 'appui-extremites') {
-    V_Ed = (part * N_Ed) / 2;
-    l_appui = longueurDAppui(d.assemblage);
-  } else {
-    // Poutre en te sous charge centrale part*N sur l_charge, equilibree par
-    // une pression uniforme sur L_w : tranchant maximal au bord de la zone
-    // chargee.
-    V_Ed = (part * N_Ed * (L_w - Math.min(l_charge, L_w))) / (2 * L_w);
-  }
   const v_Ed = (V_Ed * S_f) / I;
 
   const h_Ed = H_Ed / (4 * l_eff);
   const contact = soudure.contactDirect;
   const sansCompressionSiContact = (p: number): number => (contact && p < 0 ? 0 : p);
 
+  // Part transversale par cordon : traction de suspension (extremites) ou
+  // compression de la pression collectee (continu, retiree si contact).
+  const transversal = sansCompressionSiContact(F_Ed / 2);
   const base: Array<{ cordon: 'interieur' | 'exterieur'; id: string; libelle: string; efforts: EffortsLineiques }> = [
     {
       cordon: 'interieur',
       id: 'interieur',
       libelle: 'cordon interieur, zone chargee',
-      efforts: { p_1: F_Ed / 2 + delta_F, p_2: 0, p_para: v_Ed / 2 },
+      efforts: { p_1: transversal + delta_F, p_2: 0, p_para: v_Ed / 2 },
     },
     {
       cordon: 'exterieur',
       id: 'exterieur',
       libelle: 'cordon exterieur, zone chargee',
-      efforts: { p_1: sansCompressionSiContact(F_Ed / 2 - delta_F), p_2: 0, p_para: v_Ed / 2 },
+      efforts: { p_1: sansCompressionSiContact(transversal - delta_F), p_2: 0, p_para: v_Ed / 2 },
     },
   ];
   if (l_appui !== null) {
@@ -300,8 +341,7 @@ export function fluxDansLesCordons(d: DonneesFlux): FluxSoudures {
     part,
     x_charge,
     F_Ed,
-    M_encastrement: M_kNmm / 1000,
-    m_encastrement,
+    m_elastique,
     m_pl_platine,
     m_pl_ame,
     m_Ed,
