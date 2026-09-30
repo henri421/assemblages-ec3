@@ -6,38 +6,16 @@
  * navigateur imprime deja tres bien du HTML.
  */
 
-import type { Bloc } from './view';
-import { echapper } from './format';
+import {
+  JETONS,
+  echapper,
+  resultatsEnCsv as resultatsEnCsvCommun,
+  svgAutonome as svgAutonomeCommun,
+} from 'aedificium-ui';
 
-/**
- * Les jetons de l'identite graphique, embarques dans les documents exportes.
- * Copie du `:root` de `style.css` : un document exporte ne voit pas la
- * feuille de la page. Toute evolution du `:root` doit etre reportee ici.
- */
-export const JETONS = `:root {
-  --fond: #f7f7f6;
-  --surface: #ffffff;
-  --surface-appui: #f2f1ec;
-  --texte: #1a1a1a;
-  --texte-doux: #4a4842;
-  --texte-faible: #6a6862;
-  --bordure: #c8c6c0;
-  --bordure-douce: #eceae4;
-  --accent: #1e5aa8;
-  --accent-doux: #eaf1f9;
-  --compression: #2f5d8a;
-  --traction: #a8442a;
-  --beton: #e7eaee;
-  --neutre: #9a978f;
-  --ok: #1f6f3f;      --ok-fond: #eaf4ee;
-  --alerte: #8a6d00;  --alerte-fond: #fdf6e3;
-  --refus: #a52121;   --refus-fond: #f8ecec;
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --rayon: 4px;
-  --rayon-petit: 3px;
-  color-scheme: light;
-}`;
+import type { Bloc } from './view';
+
+export { JETONS };
 
 /**
  * Les regles de PEINTURE des dessins, jetons compris.
@@ -66,51 +44,14 @@ svg { background: var(--surface); color-scheme: light; font-family: var(--sans);
 .dessin .appui { fill: none; stroke: var(--texte); stroke-width: 3; }
 .dessin .charge { fill: var(--texte); stroke: var(--texte); stroke-width: 2; }`;
 
-const DECLARATION_XML = '<?xml version="1.0" encoding="UTF-8"?>';
-const NAMESPACE_SVG = 'http://www.w3.org/2000/svg';
-
-/** Les styles voyagent dans un CDATA : ils contiennent des `>` et des `&`. */
-function baliseStyle(styles: string): string {
-  return `<style type="text/css"><![CDATA[\n${styles}\n]]></style>`;
-}
-
-/** Enveloppe un SVG de la page dans un document autonome, styles INLINES. */
+/** Enveloppe un dessin de la page dans un SVG autonome, styles de trace inlines. */
 export function svgAutonome(svg: string, styles: string = STYLES_TRACE): string {
-  const debut = /<svg\b[^>]*>/i.exec(svg);
-  const fin = svg.lastIndexOf('</svg>');
-  if (debut === null || fin < debut.index) {
-    return `${DECLARATION_XML}\n<svg xmlns="${NAMESPACE_SVG}">${baliseStyle(styles)}</svg>`;
-  }
-  const ouverture = /\bxmlns\s*=/.test(debut[0])
-    ? debut[0]
-    : debut[0].replace(/^<svg\b/i, `<svg xmlns="${NAMESPACE_SVG}"`);
-  return `${DECLARATION_XML}\n${ouverture}${baliseStyle(styles)}${svg.slice(debut.index + debut[0].length, fin)}</svg>`;
+  return svgAutonomeCommun(svg, styles);
 }
 
-// --- CSV ---------------------------------------------------------------------
-
-/** Point-virgule : la virgule est deja le separateur decimal. */
-const SEPARATEUR = ';';
-const FIN_DE_LIGNE = '\r\n';
-/** Marque d'ordre des octets : sans elle, un tableur massacre accents et lettres grecques. */
-const BOM = '﻿';
-
-function champCsv(valeur: string): string {
-  if (!/[;"\r\n]/.test(valeur)) return valeur;
-  return `"${valeur.replace(/"/g, '""')}"`;
-}
-
-/**
- * Les resultats en tableau. AUCUN BLOC N'EST OMIS : ce qui n'a pas ete
- * calcule sort avec son motif.
- */
+/** Les resultats en CSV (point-virgule, BOM, aucun bloc omis). */
 export function resultatsEnCsv(blocs: readonly Bloc[]): string {
-  const lignes = [['Bloc', 'Symbole', 'Grandeur', 'Valeur'].join(SEPARATEUR)];
-  for (const b of blocs) {
-    for (const l of b.lignes) lignes.push([b.titre, l.symbole, l.libelle, l.valeur].map(champCsv).join(SEPARATEUR));
-    if (b.note !== null) lignes.push([b.titre, '', b.note, ''].map(champCsv).join(SEPARATEUR));
-  }
-  return BOM + lignes.join(FIN_DE_LIGNE) + FIN_DE_LIGNE;
+  return resultatsEnCsvCommun(blocs);
 }
 
 // --- Note de calcul ------------------------------------------------------------

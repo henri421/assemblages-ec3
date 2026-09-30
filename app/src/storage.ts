@@ -8,15 +8,7 @@
  * requete reseau. La memoire locale reste sur le poste.
  */
 
-export function telecharger(nomFichier: string, contenu: string, typeMime: string): void {
-  const blob = new Blob([contenu], { type: typeMime });
-  const url = URL.createObjectURL(blob);
-  const lien = document.createElement('a');
-  lien.href = url;
-  lien.download = nomFichier;
-  lien.click();
-  URL.revokeObjectURL(url);
-}
+export { ouvrirOuTelecharger, telecharger } from 'aedificium-ui';
 
 /** Texte d'un fichier choisi par l'utilisateur. */
 export function lireFichier(fichier: File): Promise<string> {

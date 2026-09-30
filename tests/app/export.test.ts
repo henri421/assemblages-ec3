@@ -71,3 +71,13 @@ describe('noteDeCalculHtml', () => {
     expect(html).toMatch(/class="avertissement">attention/);
   });
 });
+
+describe('jetons communs', () => {
+  it('le :root de style.css porte les memes valeurs que JETONS d aedificium-ui', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { JETONS, valeursDesJetons } = await import('aedificium-ui');
+    const css = readFileSync(new URL('../../app/src/style.css', import.meta.url), 'utf8');
+    const racine = css.slice(css.indexOf(':root'), css.indexOf('}', css.indexOf(':root')) + 1);
+    expect(valeursDesJetons(racine)).toEqual(valeursDesJetons(JETONS));
+  });
+});

@@ -24,7 +24,7 @@ import {
   type Valeurs,
 } from './form';
 import { avertissements, hypotheses } from './hypotheses';
-import { lireFichier, memoriser, relire, telecharger } from './storage';
+import { lireFichier, memoriser, ouvrirOuTelecharger, relire, telecharger } from './storage';
 import {
   blocsDuCalcul,
   htmlAssistance,
@@ -236,25 +236,7 @@ function exporterNote(c: Calcul): void {
     avertissements: avertissements(c),
     hypotheses: hypotheses(outil),
   });
-  const fichier = `${baseDeNom(c)}-note.html`;
-  // L'ouverture d'onglet est souvent bloquee : un bouton qui ne fait rien
-  // sans rien dire est pire qu'un telechargement inattendu.
-  let onglet: Window | null = null;
-  try {
-    onglet = window.open('', '_blank') ?? null;
-  } catch {
-    onglet = null;
-  }
-  if (onglet === null) {
-    telecharger(fichier, html, 'text/html;charset=utf-8');
-    return;
-  }
-  try {
-    onglet.document.write(html);
-    onglet.document.close();
-  } catch {
-    telecharger(fichier, html, 'text/html;charset=utf-8');
-  }
+  ouvrirOuTelecharger(`${baseDeNom(c)}-note.html`, html);
 }
 
 document.addEventListener('click', (evenement) => {

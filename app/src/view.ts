@@ -7,7 +7,7 @@
  * de calcul : ce qui s'affiche est ce qui s'exporte.
  */
 
-import { formaterTaux } from '../../src/index';
+import { tauxFr } from 'aedificium-ui';
 import type {
   ConstatRegle,
   ResultatCordons,
@@ -29,11 +29,6 @@ export interface Bloc {
   lignes: Ligne[];
   /** Precision ou motif d'indisponibilite ; null s'il n'y en a pas. */
   note: string | null;
-}
-
-/** Taux a la francaise, arrondi vers le verdict (voir `formaterTaux`). */
-function tauxFr(v: number): string {
-  return formaterTaux(v).replace('.', ',');
 }
 
 const l = (symbole: string, libelle: string, valeur: string): Ligne => ({ symbole, libelle, valeur });
