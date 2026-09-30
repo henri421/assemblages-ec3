@@ -3,10 +3,84 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>assemblages-ec3 — platines d'appui de tirants, EN 1993-1-8</title>
+    <meta name="theme-color" content="#f7f7f6" />
+    <title>assemblages-ec3 — assemblages soudes, EN 1993-1-8</title>
   </head>
   <body>
-    <main><h1>assemblages-ec3</h1></main>
+    <nav class="barre" aria-label="suite d'outils">
+      <div class="barre-corps">
+        <span class="barre-nom">EC3 &middot; Acier</span>
+        <a class="barre-lien" href="https://henri421.github.io/WebAedificium/" target="_blank" rel="noopener"
+          >Outils de calcul &#8599;</a
+        >
+      </div>
+    </nav>
+
+    <header>
+      <h1>assemblages-ec3</h1>
+      <p class="sous-titre">
+        Assemblages soudes et platines d'appui de tetes d'ancrage — EN 1993-1-8:2005, cordons d'angle
+        §4.5.3, troncon en te §6.2.5, arrachement lamellaire EN 1993-1-10.
+      </p>
+      <p class="avertissement">
+        Aide au calcul. Cet outil constate, il ne prescrit pas. Les resultats relevent de la responsabilite de
+        l'ingenieur qui les emploie et doivent etre verifies. Valeurs recommandees de l'EN 1993 ; une annexe
+        nationale peut les modifier. L'EN 1993-1-8:2024 (2<sup>e</sup> generation) n'est pas encore applicable.
+      </p>
+    </header>
+
+    <main>
+      <section id="saisie" aria-label="saisie">
+        <label class="choix-outil"
+          ><span>Detail</span>
+          <select data-role="outil"></select>
+        </label>
+        <p class="description" data-role="description"></p>
+        <form id="formulaire" autocomplete="off" data-role="formulaire"></form>
+        <div class="assistance-bloc" data-role="assistance" hidden>
+          <h2>Assistance</h2>
+          <div data-role="assistance-corps"></div>
+        </div>
+        <div class="boutons">
+          <button type="button" data-action="enregistrer">Enregistrer (JSON)</button>
+          <button type="button" data-action="ouvrir">Ouvrir…</button>
+          <button type="button" data-action="reinitialiser">Valeurs de depart</button>
+          <input type="file" accept="application/json,.json" data-role="fichier" hidden />
+        </div>
+        <p class="note">
+          Aucune donnee ne quitte le navigateur : le calcul, l'enregistrement et la relecture sont locaux.
+        </p>
+      </section>
+
+      <section id="dessins" aria-label="dessins a l'echelle">
+        <h2>Geometrie</h2>
+        <div data-role="dessins-corps"></div>
+      </section>
+
+      <section id="resultat" aria-label="resultat">
+        <h2>Resultat</h2>
+        <p data-role="erreur" class="erreur" role="alert" hidden></p>
+        <div data-role="resultat-corps"></div>
+      </section>
+
+      <section id="sorties" aria-label="sorties">
+        <h2>Sorties</h2>
+        <div class="boutons">
+          <button type="button" data-action="exporter-dessins">Dessins (SVG)</button>
+          <button type="button" data-action="exporter-resultats">Resultats (CSV)</button>
+          <button type="button" data-action="exporter-note">Note de calcul (HTML imprimable)</button>
+        </div>
+        <p class="note">
+          La note s'ouvre dans un onglet et s'imprime en PDF par le navigateur ; si l'ouverture est bloquee, elle est
+          telechargee. C'est un compte rendu, pas une justification reglementaire signee.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p data-role="limites"></p>
+    </footer>
+
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>
