@@ -327,3 +327,8 @@ if (demande !== null && OUTILS.some((o) => o.id === demande)) {
   }
 }
 if (!demarre) changerOutil('chaise-ancrage');
+
+// Hors navigateur (tests), pas de service worker.
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  void import('./pwa').then((m) => m.enregistrerServiceWorker());
+}
