@@ -7,6 +7,7 @@
  * de calcul : ce qui s'affiche est ce qui s'exporte.
  */
 
+import { formaterTaux } from '../../src/index';
 import type {
   ConstatRegle,
   ResultatCordons,
@@ -28,6 +29,11 @@ export interface Bloc {
   lignes: Ligne[];
   /** Precision ou motif d'indisponibilite ; null s'il n'y en a pas. */
   note: string | null;
+}
+
+/** Taux a la francaise, arrondi vers le verdict (voir `formaterTaux`). */
+function tauxFr(v: number): string {
+  return formaterTaux(v).replace('.', ',');
 }
 
 const l = (symbole: string, libelle: string, valeur: string): Ligne => ({ symbole, libelle, valeur });
@@ -124,7 +130,7 @@ export function htmlTaux(taux: readonly Taux[]): string {
         `<tr data-taux="${t.id}" class="${depasse ? 'depasse' : ''}">` +
         `<td class="libelle">${echapper(t.libelle)}${t.famille === 'service' ? ' <em>(service)</em>' : ''}</td>` +
         `<td class="clause">${echapper(t.clause)}</td>` +
-        `<td class="valeur">${nombreFr(t.valeur, 3)}</td>` +
+        `<td class="valeur">${tauxFr(t.valeur)}</td>` +
         `<td class="barre"><span class="jauge"><span style="width:${largeur.toFixed(1)}%"></span></span></td></tr>`
       );
     })
@@ -181,9 +187,9 @@ function htmlPointsGroupe(r: ResultatCordons): string {
       return (
         `<tr${gouv}><td>${echapper(p.cordon)} / ${p.extremite}</td>` +
         `<td>${nombreFr(d.sigma_perp, 1)}</td><td>${nombreFr(d.tau_perp, 1)}</td><td>${nombreFr(d.tau_para, 1)}</td>` +
-        `<td>${nombreFr(d.tauxEquivalent, 3)}</td>` +
-        `<td>${d.tauxNormal === null ? 'n.a.' : nombreFr(d.tauxNormal, 3)}</td>` +
-        `<td>${nombreFr(p.simplifiee.taux, 3)}</td></tr>`
+        `<td>${tauxFr(d.tauxEquivalent)}</td>` +
+        `<td>${d.tauxNormal === null ? 'n.a.' : tauxFr(d.tauxNormal)}</td>` +
+        `<td>${tauxFr(p.simplifiee.taux)}</td></tr>`
       );
     })
     .join('');
@@ -198,9 +204,9 @@ function htmlCasChaise(verifs: readonly VerificationCas[], gouvernant: Verificat
       return (
         `<tr${gouv}><td>${echapper(v.cas.libelle)}</td>` +
         `<td>${nombreFr(d.sigma_perp, 1)}</td><td>${nombreFr(d.tau_perp, 1)}</td><td>${nombreFr(d.tau_para, 1)}</td>` +
-        `<td>${nombreFr(d.tauxEquivalent, 3)}</td>` +
-        `<td>${d.tauxNormal === null ? 'n.a.' : nombreFr(d.tauxNormal, 3)}</td>` +
-        `<td>${nombreFr(v.simplifiee.taux, 3)}</td></tr>`
+        `<td>${tauxFr(d.tauxEquivalent)}</td>` +
+        `<td>${d.tauxNormal === null ? 'n.a.' : tauxFr(d.tauxNormal)}</td>` +
+        `<td>${tauxFr(v.simplifiee.taux)}</td></tr>`
       );
     })
     .join('');

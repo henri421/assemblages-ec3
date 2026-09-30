@@ -74,7 +74,7 @@ export {
 } from './dispositions/verifier-dispositions';
 
 export { effortDimensionnant, type EffortDimensionnant, type OrigineEffort } from './domaines/effort-dimensionnant';
-export { trierTaux, type Taux } from './domaines/taux-de-travail';
+export { formaterTaux, trierTaux, type Taux } from './domaines/taux-de-travail';
 export {
   verifierAssemblage,
   type Constat,

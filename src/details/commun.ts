@@ -10,7 +10,7 @@
  */
 
 import type { ResultatDispositions } from '../dispositions/verifier-dispositions';
-import { gouvernant, trierTaux, type Taux } from '../domaines/taux-de-travail';
+import { formaterTaux, gouvernant, trierTaux, type Taux } from '../domaines/taux-de-travail';
 import { verifierDirectionnelle, type ResultatDirectionnel } from '../soudures/directionnelle';
 import {
   analyserGroupe,
@@ -126,7 +126,7 @@ export function conclure(
         max === null
           ? 'aucun mecanisme de resistance applicable'
           : `${resistanceOk ? 'resistance suffisante' : 'resistance insuffisante'} : mecanisme le plus sollicite ` +
-            `« ${max.libelle} » (${max.clause}), taux ${max.valeur.toFixed(3)}`,
+            `« ${max.libelle} » (${max.clause}), taux ${formaterTaux(max.valeur)}`,
     },
     dispositions: {
       ok: dispositions.ok,

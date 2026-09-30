@@ -45,3 +45,20 @@ export function gouvernant(liste: readonly Taux[], famille: Famille = 'resistanc
   }
   return max;
 }
+
+/**
+ * Taux ecrit avec `decimales` chiffres, arrondi VERS LE VERDICT : par defaut
+ * sous 1, par exces au-dessus.
+ *
+ * Le piege : 0,9996 arrondi au plus proche s ecrit « 1.000 » a cote d un
+ * verdict favorable, 1,0004 aussi a cote d un verdict defavorable. Dans les
+ * deux cas le nombre contredit la conclusion. L egalite exacte reste 1.000.
+ * (Meme regle que `formatUtilization` de section-uls.)
+ */
+export function formaterTaux(valeur: number, decimales = 3): string {
+  if (!Number.isFinite(valeur)) return 'hors domaine';
+  if (valeur === 1) return (1).toFixed(decimales);
+  const f = 10 ** decimales;
+  const arrondi = valeur < 1 ? Math.floor(valeur * f) / f : Math.ceil(valeur * f) / f;
+  return arrondi.toFixed(decimales);
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { gouvernant, sansObjet, taux, trierTaux } from '../../src/domaines/taux-de-travail';
+import { formaterTaux, gouvernant, sansObjet, taux, trierTaux } from '../../src/domaines/taux-de-travail';
 
 describe('trierTaux', () => {
   it('decroissant, les sans-objet a la fin dans leur ordre', () => {
@@ -20,5 +20,15 @@ describe('gouvernant', () => {
     expect(gouvernant(l)?.id).toBe('a');
     expect(gouvernant(l, 'service')?.id).toBe('s');
     expect(gouvernant([])).toBeNull();
+  });
+});
+
+describe('formaterTaux — arrondi vers le verdict', () => {
+  it('par defaut sous 1, par exces au-dessus', () => {
+    expect(formaterTaux(0.9996)).toBe('0.999');
+    expect(formaterTaux(1.0004)).toBe('1.001');
+    expect(formaterTaux(1)).toBe('1.000');
+    expect(formaterTaux(0.5)).toBe('0.500');
+    expect(formaterTaux(Number.NaN)).toBe('hors domaine');
   });
 });
