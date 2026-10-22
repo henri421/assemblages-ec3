@@ -96,3 +96,20 @@ export {
 export { verifierProfilePlatine, type DonneesProfile, type ResultatProfile } from './details/profile-platine';
 export type { ResultatCordons, VerdictDetail, VerificationPoint } from './details/commun';
 export type { Modele } from './persistance/format-modele';
+export {
+  verifierEclissage,
+  type DonneesEclissage,
+  type PlatEclisse,
+  type PressionBoulon,
+  type ResultatEclissage,
+} from './details/eclissage-boulonne';
+export {
+  CLASSES_BOULON,
+  DIAMETRES_BOULON,
+  airesBoulon,
+  alphaV,
+  diametreTrou,
+  resistancesBoulon,
+  type ClasseBoulon,
+  type DiametreBoulon,
+} from './norms/boulons';
