@@ -28,10 +28,12 @@ import { lireFichier, memoriser, ouvrirOuTelecharger, relire, telecharger } from
 import {
   blocsDuCalcul,
   htmlAssistance,
+  htmlConstats,
   htmlCordons,
   htmlDispositions,
   htmlTaux,
   messageDErreur,
+  noteMethodes,
   rendreResultat,
   titreDuVerdict,
   type Bloc,
@@ -166,7 +168,11 @@ function rafraichir(): void {
   try {
     const c = calculer(lecture.modele);
     corpsDessins.innerHTML = dessinsDuCalcul(c)
-      .map((d) => `<figure><figcaption>${echapper(d.titre)}</figcaption>${d.svg}<p class="legende">${echapper(d.legende)}</p></figure>`)
+      .map(
+        (d, i) =>
+          `<figure><figcaption>${echapper(d.titre)}</figcaption>${d.svg}<p class="legende">${echapper(d.legende)}</p>` +
+          `<button type="button" data-action="exporter-dessin" data-dessin="${i}">${echapper(d.titre)} (SVG)</button></figure>`
+      )
       .join('');
     const alertes = avertissements(c).map((a) => `<p class="alerte">${echapper(a)}</p>`).join('');
     corpsResultat.innerHTML = alertes + rendreResultat(c);
@@ -227,9 +233,12 @@ function exporterNote(c: Calcul): void {
     dessins: dessinsDuCalcul(c),
     verdict: titreDuVerdict(c.resultat.verdict),
     motif: c.resultat.motif,
+    // Les memes elements, dans le meme ordre, que `rendreResultat` a l'ecran :
+    // la note omettait les constats et la note sur les methodes des cordons.
     tableaux: [
+      { titre: 'Constats', html: htmlConstats(c) },
       { titre: 'Taux de travail', html: htmlTaux(c.resultat.taux) },
-      { titre: 'Cordons', html: htmlCordons(c) },
+      { titre: 'Cordons', html: `${htmlCordons(c)}<p class="note">${echapper(noteMethodes(c))}</p>` },
       { titre: 'Dispositions constructives', html: htmlDispositions(c.resultat.dispositions) },
     ],
     resultats: blocsDuCalcul(c),
@@ -259,10 +268,12 @@ document.addEventListener('click', (evenement) => {
   if (!action.startsWith('exporter-')) return;
   if (dernier === null) return sansCalcul();
   const c = dernier;
-  if (action === 'exporter-dessins') {
-    dessinsDuCalcul(c).forEach((d, i) =>
-      telecharger(`${baseDeNom(c)}-${i + 1}.svg`, svgAutonome(d.svg), 'image/svg+xml;charset=utf-8'),
-    );
+  // Un dessin par bouton, place sous chaque figure : plusieurs telechargements
+  // lances d'un meme clic, les navigateurs bloquent ceux qui suivent le premier.
+  if (action === 'exporter-dessin') {
+    const i = Number(cible.dataset.dessin);
+    const d = dessinsDuCalcul(c)[i];
+    if (d !== undefined) telecharger(`${baseDeNom(c)}-${i + 1}.svg`, svgAutonome(d.svg), 'image/svg+xml;charset=utf-8');
   } else if (action === 'exporter-resultats') {
     telecharger(`${baseDeNom(c)}-resultats.csv`, resultatsEnCsv([...blocsDEntree(), ...blocsDuCalcul(c)]), 'text/csv;charset=utf-8');
   } else if (action === 'exporter-note') {

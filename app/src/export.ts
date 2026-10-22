@@ -98,6 +98,13 @@ const STYLE_NOTE = `
   .dessin-note { margin: .6rem 0 1rem; page-break-inside: avoid; }
   .dessin-note svg { max-width: 100%; max-height: 90mm; height: auto; display: block; }
   .jauge { display: none; }
+  .constats { list-style: none; padding: 0; margin: .3rem 0 .8rem; color: var(--texte); }
+  .constat { display: grid; grid-template-columns: 7rem 7rem 1fr; gap: .5rem; padding: .3rem .5rem;
+             border-left: 3px solid var(--bordure); background: var(--surface-appui); margin-bottom: .25rem; }
+  .constat-nom { font-weight: 600; }
+  .constat-ok { border-color: var(--ok); } .constat-ok .constat-etat { color: var(--ok); }
+  .constat-refus { border-color: var(--refus); } .constat-refus .constat-etat { color: var(--refus); }
+  .constat-motif { color: var(--texte-doux); }
   .pied { margin-top: 2rem; padding-top: .6rem; border-top: 1px solid var(--bordure); color: var(--texte-doux); font-size: .78rem; }
   ul { margin: .3rem 0 .6rem; padding-left: 1.1rem; color: var(--texte-doux); font-size: .82rem; }
   @media print { body { padding: 0; } h2 { page-break-after: avoid; } }

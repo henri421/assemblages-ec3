@@ -85,7 +85,7 @@ export function constatsDuCalcul(c: Calcul): ConstatAffiche[] {
   return liste;
 }
 
-function htmlConstats(c: Calcul): string {
+export function htmlConstats(c: Calcul): string {
   return (
     '<ul class="constats">' +
     constatsDuCalcul(c)
