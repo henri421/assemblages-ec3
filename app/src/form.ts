@@ -9,10 +9,18 @@
  * contraintes en MPa, angles en degres.
  */
 
-import { ec3Recommande, type Modele, type ProfilEC3 } from '../../src/index';
+import {
+  CLASSES_BOULON,
+  DIAMETRES_BOULON,
+  ec3Recommande,
+  type ClasseBoulon,
+  type DiametreBoulon,
+  type Modele,
+  type ProfilEC3,
+} from '../../src/index';
 import { lireNombre } from './format';
 
-export type Outil = 'chaise-ancrage' | 'te' | 'cruciforme' | 'angle' | 'recouvrement' | 'profile-platine';
+export type Outil = 'chaise-ancrage' | 'te' | 'cruciforme' | 'angle' | 'recouvrement' | 'profile-platine' | 'eclissage-boulonne';
 
 export const OUTILS: ReadonlyArray<{ id: Outil; nom: string; description: string }> = [
   { id: 'chaise-ancrage', nom: "Tete d'ancrage de tirant", description: 'platine raidie par deux ames, sur beton ou sur lierne' },
@@ -21,6 +29,7 @@ export const OUTILS: ReadonlyArray<{ id: Outil; nom: string; description: string
   { id: 'angle', nom: "Assemblage d'angle", description: 'plat soude au bord d une autre piece' },
   { id: 'recouvrement', nom: 'Recouvrement', description: 'plat sur plat, cordons lateraux et frontal' },
   { id: 'profile-platine', nom: 'Profile sur platine', description: 'profile en I soude sur une platine' },
+  { id: 'eclissage-boulonne', nom: 'Eclissage boulonne', description: 'plats boulonnes sous effort axial, boulons ordinaires' },
 ];
 
 export type Valeurs = Record<string, string>;
@@ -326,6 +335,59 @@ const PROFILE: Groupe[] = [
   groupeCoefficients(false),
 ];
 
+const ECLISSAGE: Groupe[] = [
+  {
+    titre: 'Plats',
+    champs: [
+      nombre('b_p', 'b<sub>p</sub>, plat attache', 'mm'),
+      nombre('t_p', 't<sub>p</sub>, plat attache', 'mm'),
+      nombre('b_b', 'b<sub>b</sub>, plat de base ou couvre-joints', 'mm'),
+      nombre('t_b', 't<sub>b</sub>, epaisseur (totale des couvre-joints en double)', 'mm'),
+      {
+        cle: 'n_s',
+        libelle: 'plans de cisaillement',
+        unite: '',
+        type: 'choix',
+        options: [
+          ['1', '1, recouvrement simple'],
+          ['2', '2, double couvre-joint'],
+        ],
+      },
+    ],
+  },
+  {
+    titre: 'Boulons',
+    champs: [
+      {
+        cle: 'classe_boulon',
+        libelle: 'classe',
+        unite: '',
+        type: 'choix',
+        options: CLASSES_BOULON.map((c) => [c, c] as const),
+      },
+      {
+        cle: 'd_boulon',
+        libelle: 'diametre',
+        unite: '',
+        type: 'choix',
+        options: DIAMETRES_BOULON.map((d) => [String(d), `M${d}`] as const),
+      },
+      { cle: 'filetage', libelle: 'filetage dans le plan de cisaillement', unite: '', type: 'case' },
+      nombre('n_1', 'n<sub>1</sub>, rangees dans le sens de l effort', ''),
+      nombre('n_2', 'n<sub>2</sub>, files en travers', ''),
+      nombre('e_1', 'e<sub>1</sub>, pince longitudinale', 'mm'),
+      nombre('p_1', 'p<sub>1</sub>, entraxe des rangees', 'mm', { visible: (v) => (lireNombre(v.n_1 ?? '') ?? 1) > 1 }),
+      nombre('p_2', 'p<sub>2</sub>, entraxe des files', 'mm', { visible: (v) => (lireNombre(v.n_2 ?? '') ?? 1) > 1 }),
+    ],
+  },
+  {
+    titre: 'Sollicitation',
+    champs: [nombre('N', 'N, traction', 'kN')],
+  },
+  GROUPE_MATERIAU,
+  groupeCoefficients(false),
+];
+
 export const FORMULAIRES: Record<Outil, Groupe[]> = {
   'chaise-ancrage': CHAISE,
   te: groupesTe('platine'),
@@ -333,6 +395,7 @@ export const FORMULAIRES: Record<Outil, Groupe[]> = {
   angle: groupesTe("piece d'angle"),
   recouvrement: RECOUVREMENT,
   'profile-platine': PROFILE,
+  'eclissage-boulonne': ECLISSAGE,
 };
 
 const COEFFICIENTS: Valeurs = { gamma_M0: '1', gamma_M1: '1', gamma_M2: '1,25', gamma_c: '1,5' };
@@ -375,6 +438,14 @@ export function valeursParDefaut(outil: Outil): Valeurs {
       return {
         h: '200', b: '200', t_w: '10', t_f: '15', t_platine: '20', a_f: '7', a_w: '5',
         N: '0', V_z: '100', V_y: '0', M_y: '50', M_z: '0', ...MATERIAU, ...SOUDAGE, ...COEFFICIENTS,
+      };
+    case 'eclissage-boulonne':
+      // Cas de la documentation de validation : 2 × 2 M20 8.8, plats 200 × 12 S235, N = 200 kN.
+      return {
+        b_p: '200', t_p: '12', b_b: '200', t_b: '12', n_s: '1',
+        classe_boulon: '8.8', d_boulon: '20', filetage: 'oui',
+        n_1: '2', n_2: '2', e_1: '50', p_1: '70', p_2: '100', N: '200',
+        ...MATERIAU, ...COEFFICIENTS,
       };
   }
 }
@@ -556,6 +627,35 @@ function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefin
     };
   }
 
+  if (outil === 'eclissage-boulonne') {
+    const n_1 = exige(n, 'n_1');
+    const n_2 = exige(n, 'n_2');
+    return {
+      detail: 'eclissage-boulonne',
+      donnees: {
+        b_p: exige(n, 'b_p'),
+        t_p: exige(n, 't_p'),
+        b_b: exige(n, 'b_b'),
+        t_b: exige(n, 't_b'),
+        n_s: v.n_s === '2' ? 2 : 1,
+        boulons: {
+          classe: (CLASSES_BOULON.includes(v.classe_boulon as ClasseBoulon) ? v.classe_boulon : '8.8') as ClasseBoulon,
+          d: Number(v.d_boulon) as DiametreBoulon,
+          filetageDansLePlan: oui('filetage'),
+        },
+        n_1,
+        n_2,
+        e_1: exige(n, 'e_1'),
+        // Entraxe sans objet avec une seule rangee ou une seule file : 0.
+        p_1: n_1 > 1 ? exige(n, 'p_1') : 0,
+        p_2: n_2 > 1 ? exige(n, 'p_2') : 0,
+        N: exige(n, 'N'),
+        materiau,
+        profil: profil(n),
+      },
+    };
+  }
+
   return {
     detail: 'profile-platine',
     donnees: {
@@ -656,6 +756,20 @@ export function valeursDepuisModele(m: Modele): { outil: Outil; valeurs: Valeurs
           b_p: texte(d.b_p), t_p: texte(d.t_p), b_b: texte(d.b_b), t_b: texte(d.t_b), L_r: texte(d.L_r),
           a: texte(d.a), lateraux: ouiNon(d.cordons.lateraux), frontal: ouiNon(d.cordons.frontal),
           N: texte(d.sollicitations.N), V: texte(d.sollicitations.V), M: texte(d.sollicitations.M),
+          ...communs(d),
+        },
+      };
+    }
+    case 'eclissage-boulonne': {
+      const d = m.donnees;
+      return {
+        outil: 'eclissage-boulonne',
+        valeurs: {
+          ...valeursParDefaut('eclissage-boulonne'),
+          b_p: texte(d.b_p), t_p: texte(d.t_p), b_b: texte(d.b_b), t_b: texte(d.t_b), n_s: String(d.n_s),
+          classe_boulon: d.boulons.classe, d_boulon: String(d.boulons.d), filetage: ouiNon(d.boulons.filetageDansLePlan),
+          n_1: texte(d.n_1), n_2: texte(d.n_2), e_1: texte(d.e_1), p_1: texte(d.p_1), p_2: texte(d.p_2),
+          N: texte(d.N),
           ...communs(d),
         },
       };

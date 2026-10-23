@@ -30,6 +30,7 @@ import {
   htmlAssistance,
   htmlConstats,
   htmlCordons,
+  titreOrganes,
   htmlDispositions,
   htmlTaux,
   messageDErreur,
@@ -238,7 +239,7 @@ function exporterNote(c: Calcul): void {
     tableaux: [
       { titre: 'Constats', html: htmlConstats(c) },
       { titre: 'Taux de travail', html: htmlTaux(c.resultat.taux) },
-      { titre: 'Cordons', html: `${htmlCordons(c)}<p class="note">${echapper(noteMethodes(c))}</p>` },
+      { titre: titreOrganes(c), html: `${htmlCordons(c)}<p class="note">${echapper(noteMethodes(c))}</p>` },
       { titre: 'Dispositions constructives', html: htmlDispositions(c.resultat.dispositions) },
     ],
     resultats: blocsDuCalcul(c),

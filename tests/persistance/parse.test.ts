@@ -6,6 +6,7 @@ import { serialiser } from '../../src/persistance/format-modele';
 import { lireModele } from '../../src/persistance/parse';
 import type { DonneesProfile } from '../../src/details/profile-platine';
 import type { DonneesRecouvrement } from '../../src/details/recouvrement';
+import type { DonneesEclissage } from '../../src/details/eclissage-boulonne';
 import type { DonneesTe } from '../../src/details/te';
 import { chaiseDeReference } from '../fixtures/chaise';
 
@@ -50,6 +51,29 @@ describe('serialiser puis lireModele — details types', () => {
       materiau: { nuance: 'S235', qualiteZ: 'aucune' },
     };
     expect(lireModele(serialiser({ detail: 'recouvrement', donnees: d })).donnees).toEqual(d);
+  });
+
+  it('eclissage boulonne', () => {
+    const d: DonneesEclissage = {
+      b_p: 200, t_p: 12, b_b: 200, t_b: 12, n_s: 1,
+      boulons: { classe: '8.8', d: 20, filetageDansLePlan: true },
+      n_1: 2, n_2: 2, e_1: 50, p_1: 70, p_2: 100, N: 200,
+      materiau: { nuance: 'S235', qualiteZ: 'aucune' },
+    };
+    expect(lireModele(serialiser({ detail: 'eclissage-boulonne', donnees: d })).donnees).toEqual(d);
+  });
+
+  it('eclissage boulonne : refuse une classe de boulon inconnue', () => {
+    const texte = serialiser({
+      detail: 'eclissage-boulonne',
+      donnees: {
+        b_p: 200, t_p: 12, b_b: 200, t_b: 12, n_s: 1,
+        boulons: { classe: '12.9' as never, d: 20, filetageDansLePlan: true },
+        n_1: 2, n_2: 2, e_1: 50, p_1: 70, p_2: 100, N: 200,
+        materiau: { nuance: 'S235', qualiteZ: 'aucune' },
+      },
+    });
+    expect(() => lireModele(texte)).toThrow(/classe inconnue/);
   });
 
   it('profile sur platine', () => {

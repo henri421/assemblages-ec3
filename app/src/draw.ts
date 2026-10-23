@@ -296,6 +296,30 @@ export function planProfile(c: Extract<Calcul, { detail: 'profile-platine' }>): 
   );
 }
 
+/** Vue en plan de l'eclissage ; x en travers, y le long de l'effort. */
+export function planEclissage(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): string {
+  const d = c.modele.donnees;
+  const d_0 = c.resultat.d_0;
+  const L_j = (d.n_1 - 1) * d.p_1;
+  const L_r = L_j + 2 * d.e_1;
+  const lBase = 0.8 * L_r + 60;
+  const lPlat = 0.8 * L_r + 60;
+  const contenu: string[] = [
+    rect('acier', -d.b_b / 2, -lBase, d.b_b / 2, L_r),
+    rect('acier-coupe', -d.b_p / 2, 0, d.b_p / 2, L_r + lPlat),
+  ];
+  const largeur = (d.n_2 - 1) * d.p_2;
+  for (let i = 0; i < d.n_1; i++) {
+    for (let j = 0; j < d.n_2; j++) {
+      contenu.push(cercle('percage', -largeur / 2 + j * d.p_2, d.e_1 + i * d.p_1, d_0 / 2));
+    }
+  }
+  const taille = Math.max(8, 0.06 * d.b_b);
+  contenu.push(fleche(0, L_r + 0.4 * lPlat, L_r + 0.95 * lPlat, taille));
+  const demi = Math.max(d.b_b, d.b_p) / 2;
+  return svg({ x0: -demi, y0: -lBase, x1: demi, y1: L_r + lPlat }, contenu, 'Vue en plan de l eclissage boulonne');
+}
+
 export interface Dessin {
   titre: string;
   svg: string;
@@ -330,6 +354,14 @@ export function dessinsDuCalcul(c: Calcul): Dessin[] {
           titre: 'Vue en plan',
           svg: planRecouvrement(c),
           legende: "Plat de base (clair), plat attache (fonce), cordons en trait fort. Fleche : effort N.",
+        },
+      ];
+    case 'eclissage-boulonne':
+      return [
+        {
+          titre: 'Vue en plan',
+          svg: planEclissage(c),
+          legende: 'Plat de base (clair), plat attache (fonce), trous a d_0. Fleche : effort N.',
         },
       ];
     case 'profile-platine':

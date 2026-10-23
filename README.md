@@ -1,4 +1,4 @@
-# Assemblages soudés — EN 1993-1-8:2005
+# Assemblages soudés et boulonnés — EN 1993-1-8:2005
 
 Vérification d'assemblages soudés et des platines d'appui de têtes d'ancrage
 de tirants, selon l'**EN 1993-1-8:2005** (Eurocode 3, 1ʳᵉ génération).
@@ -27,7 +27,7 @@ requête réseau. L'enregistrement est un téléchargement JSON, la relecture un
 choix de fichier local ; le dernier modèle est gardé dans la mémoire locale du
 navigateur, sur le poste.
 
-Six détails, choisis en tête de page (ou par l'adresse, `?detail=te`) :
+Sept détails, choisis en tête de page (ou par l'adresse, `?detail=te`) :
 
 | Détail | Paramètre | Ce qui est vérifié |
 | --- | --- | --- |
@@ -37,6 +37,7 @@ Six détails, choisis en tête de page (ou par l'adresse, `?detail=te`) :
 | Assemblage d'angle | `angle` | idem, Z_b = 8 |
 | Recouvrement | `recouvrement` | cordons latéraux et frontal, assemblages longs §4.11, plats |
 | Profilé sur platine | `profile-platine` | cordons d'âme et de semelles, arrachement lamellaire |
+| Éclissage boulonné | `eclissage-boulonne` | boulons en cisaillement et pression diamétrale (§3.4 à §3.8), groupe, sections brute et nette, cisaillement de bloc (§3.10.2), pinces et entraxes (tableau 3.3) |
 
 Sorties : le **verdict** et son motif ; **trois constats distincts** —
 résistance, service (tête d'ancrage), dispositions constructives — jamais

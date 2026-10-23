@@ -9,6 +9,8 @@
 
 import type { DonneesProfile } from '../details/profile-platine';
 import type { DonneesRecouvrement } from '../details/recouvrement';
+import type { DonneesEclissage } from '../details/eclissage-boulonne';
+import { CLASSES_BOULON, DIAMETRES_BOULON, type ClasseBoulon, type DiametreBoulon } from '../norms/boulons';
 import type { DonneesTe } from '../details/te';
 import type { DonneesAssemblage } from '../domaines/verifier-assemblage';
 import type { ConditionsSoudage } from '../epaisseur/arrachement-lamellaire';
@@ -79,6 +81,8 @@ export function lireModele(texte: string): FichierModele {
       return { ...entete, detail: 'recouvrement', donnees: lireRecouvrement(donnees) };
     case 'profile-platine':
       return { ...entete, detail: 'profile-platine', donnees: lireProfile(donnees) };
+    case 'eclissage-boulonne':
+      return { ...entete, detail: 'eclissage-boulonne', donnees: lireEclissage(donnees) };
     default:
       throw new Error(`Type de detail inconnu : ${String(f.detail)}.`);
   }
@@ -178,6 +182,34 @@ function lireRecouvrement(d: Objet): DonneesRecouvrement {
         V: nombre(s, 'V', 'sollicitations'),
         M: nombre(s, 'M', 'sollicitations'),
       },
+      materiau: lireMateriau(d),
+    },
+    d,
+  );
+}
+
+function lireEclissage(d: Objet): DonneesEclissage {
+  const b = objet(d.boulons, 'donnees.boulons');
+  const classe = b.classe;
+  const diam = b.d;
+  if (!CLASSES_BOULON.includes(classe as ClasseBoulon)) throw new Error(`boulons.classe : classe inconnue ${String(classe)}.`);
+  if (!DIAMETRES_BOULON.includes(diam as DiametreBoulon)) throw new Error(`boulons.d : diametre non tabule ${String(diam)}.`);
+  const n_s = nombre(d, 'n_s', 'donnees');
+  if (n_s !== 1 && n_s !== 2) throw new Error('donnees.n_s : 1 ou 2 plans de cisaillement.');
+  return avecCommuns(
+    {
+      b_p: nombre(d, 'b_p', 'donnees'),
+      t_p: nombre(d, 't_p', 'donnees'),
+      b_b: nombre(d, 'b_b', 'donnees'),
+      t_b: nombre(d, 't_b', 'donnees'),
+      n_s,
+      boulons: { classe: classe as ClasseBoulon, d: diam as DiametreBoulon, filetageDansLePlan: booleen(b, 'filetageDansLePlan', 'boulons') },
+      n_1: nombre(d, 'n_1', 'donnees'),
+      n_2: nombre(d, 'n_2', 'donnees'),
+      e_1: nombre(d, 'e_1', 'donnees'),
+      p_1: nombre(d, 'p_1', 'donnees'),
+      p_2: nombre(d, 'p_2', 'donnees'),
+      N: nombre(d, 'N', 'donnees'),
       materiau: lireMateriau(d),
     },
     d,

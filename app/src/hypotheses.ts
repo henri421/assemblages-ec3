@@ -42,6 +42,16 @@ export function hypotheses(outil: Outil): string[] {
         'Flexion d excentricite hors plan d un recouvrement simple non calculee.',
         ...COMMUNES,
       ];
+    case 'eclissage-boulonne':
+      return [
+        'Boulons ordinaires en cisaillement, categorie A (pression diametrale) ; trous normaux.',
+        'Effort axial centre sur le groupe, partage egalement entre les boulons.',
+        'Pince transversale deduite de la largeur de chaque plat, boulons centres.',
+        'Cisaillement de bloc : bloc central entre les files extremes seulement.',
+        'Recouvrement simple : flexion d excentricite hors plan non calculee.',
+        "Valeurs recommandees de l'EN 1993 ; une annexe nationale peut les modifier.",
+        "Chargement statique ; la fatigue (EN 1993-1-9) n'est pas couverte.",
+      ];
     case 'profile-platine':
       return [
         'Repartition elastique de N et des moments sur toutes les gorges ; V_z par l ame, V_y par les semelles.',

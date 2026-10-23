@@ -6,12 +6,14 @@ import {
   REGLES_CHAISE,
   verifierAssemblage,
   verifierDispositions,
+  verifierEclissage,
   verifierProfilePlatine,
   verifierRecouvrement,
   verifierTe,
   type Modele,
   type ResultatAssemblage,
   type ResultatDispositions,
+  type ResultatEclissage,
   type ResultatProfile,
   type ResultatRecouvrement,
   type ResultatTe,
@@ -21,7 +23,8 @@ export type Calcul =
   | { detail: 'chaise-ancrage'; modele: Extract<Modele, { detail: 'chaise-ancrage' }>; resultat: ResultatAssemblage }
   | { detail: 'te'; modele: Extract<Modele, { detail: 'te' }>; resultat: ResultatTe }
   | { detail: 'recouvrement'; modele: Extract<Modele, { detail: 'recouvrement' }>; resultat: ResultatRecouvrement }
-  | { detail: 'profile-platine'; modele: Extract<Modele, { detail: 'profile-platine' }>; resultat: ResultatProfile };
+  | { detail: 'profile-platine'; modele: Extract<Modele, { detail: 'profile-platine' }>; resultat: ResultatProfile }
+  | { detail: 'eclissage-boulonne'; modele: Extract<Modele, { detail: 'eclissage-boulonne' }>; resultat: ResultatEclissage };
 
 /** Calcul complet ; leve si le noyau refuse les donnees. */
 export function calculer(modele: Modele): Calcul {
@@ -34,6 +37,8 @@ export function calculer(modele: Modele): Calcul {
       return { detail: modele.detail, modele, resultat: verifierRecouvrement(modele.donnees) };
     case 'profile-platine':
       return { detail: modele.detail, modele, resultat: verifierProfilePlatine(modele.donnees) };
+    case 'eclissage-boulonne':
+      return { detail: modele.detail, modele, resultat: verifierEclissage(modele.donnees) };
   }
 }
 

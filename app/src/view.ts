@@ -218,6 +218,7 @@ function enteteCordons(): string {
 
 /** Tableau des cordons : chaque point verifie, le gouvernant en evidence. */
 export function htmlCordons(c: Calcul): string {
+  if (c.detail === 'eclissage-boulonne') return htmlBoulons(c);
   if (c.detail === 'chaise-ancrage') {
     const s = c.resultat.soudures;
     return htmlCasChaise(s.verifications, s.gouvernant);
@@ -226,12 +227,36 @@ export function htmlCordons(c: Calcul): string {
   return cordons === null ? '<p class="note">Pleine penetration : aucune gorge a verifier (§4.7.1).</p>' : htmlPointsGroupe(cordons);
 }
 
+/** Titre de la section des organes d'assemblage : cordons ou boulons. */
+export function titreOrganes(c: Calcul): string {
+  return c.detail === 'eclissage-boulonne' ? 'Boulons' : 'Cordons';
+}
+
+/** Tableau de la pression diametrale, position par position. */
+function htmlBoulons(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): string {
+  const r = c.resultat;
+  const lignes = r.pression
+    .map(
+      (p) =>
+        `<tr><td>${echapper(p.position)}</td><td class="valeur">${p.nombre}</td><td class="valeur">${nombreFr(p.alpha_b, 3)}</td>` +
+        `<td class="valeur">${nombreFr(p.k_1, 3)}</td><td class="valeur">${nombreFr(p.F_b_Rd, 1)}</td><td>${echapper(p.plat)}</td></tr>`,
+    )
+    .join('');
+  return (
+    `<p class="note">F<sub>v,Rd</sub> = ${nombreFr(r.F_v_Rd, 1)} kN par boulon (${c.modele.donnees.n_s} plan${c.modele.donnees.n_s > 1 ? 's' : ''}), ` +
+    `F<sub>v,Ed</sub> = ${nombreFr(r.F_v_Ed, 1)} kN ; groupe ${nombreFr(r.F_groupe, 1)} kN.</p>` +
+    '<div class="defilement"><table class="tableau"><thead><tr><th>position</th><th>nombre</th><th>alpha_b</th><th>k_1</th>' +
+    `<th>F<sub>b,Rd</sub> (kN)</th><th>plat</th></tr></thead><tbody>${lignes}</tbody></table></div>`
+  );
+}
+
 /**
  * Note sur les methodes. En cisaillement longitudinal pur, les deux methodes
  * COINCIDENT : on le dit, plutot que de montrer deux fois le meme nombre
  * comme s'il s'agissait de deux constats.
  */
 export function noteMethodes(c: Calcul): string {
+  if (c.detail === 'eclissage-boulonne') return `Groupe de boulons : ${c.resultat.regleGroupe}.`;
   const coincident =
     c.detail === 'chaise-ancrage' ? c.resultat.soudures.methodesCoincident : c.resultat.cordons?.methodesCoincident ?? false;
   return coincident
@@ -260,6 +285,8 @@ export function blocsDuCalcul(c: Calcul): Bloc[] {
       return blocsRecouvrement(c);
     case 'profile-platine':
       return blocsProfile(c);
+    case 'eclissage-boulonne':
+      return blocsEclissage(c);
   }
 }
 
@@ -505,6 +532,45 @@ function blocsProfile(c: Extract<Calcul, { detail: 'profile-platine' }>): Bloc[]
   return [b, blocArrachement(r.arrachement)];
 }
 
+function blocsEclissage(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): Bloc[] {
+  const r = c.resultat;
+  const d = c.modele.donnees;
+  const blocs: Bloc[] = [
+    {
+      titre: 'Boulons',
+      lignes: [
+        l('boulons', `${r.n_b} boulons M${d.boulons.d} classe ${d.boulons.classe}`, `${d.n_1} rangee(s) × ${d.n_2} file(s)`),
+        l('d_0', 'trou normal (EN 1090-2)', mm(r.d_0, 0)),
+        l('f_ub', 'resistance ultime du boulon (tableau 3.1)', MPa(r.f_ub, 0)),
+        l('alpha_v', d.boulons.filetageDansLePlan ? 'filetage dans le plan, A_s' : 'tige lisse dans le plan, A', sans(r.alpha_v, 2)),
+        l('L_j', 'longueur de l assemblage', mm(r.L_j, 0)),
+        l('beta_Lf', 'assemblage long (§3.8)', sans(r.beta_Lf)),
+        l('F_v,Rd', 'cisaillement par boulon, plans et beta_Lf compris', kN(r.F_v_Rd)),
+        l('F_v,Ed', 'effort par boulon', kN(r.F_v_Ed)),
+        l('F_groupe', r.regleGroupe, kN(r.F_groupe)),
+      ],
+      note: null,
+    },
+  ];
+  for (const p of r.plats) {
+    blocs.push({
+      titre: p.nom,
+      lignes: [
+        l('b × t', 'dimensions', `${nombreFr(p.b, 0)} × ${nombreFr(p.t, 0)} mm`),
+        l('e_2', 'pince transversale', mm(p.e_2)),
+        l('f_y, f_u', 'tableau 3.1 de l EN 1993-1-1', `${nombreFr(p.f_y, 0)} / ${nombreFr(p.f_u, 0)} MPa`),
+        l('N_pl,Rd', 'section brute (6.6)', kN(p.N_pl_Rd)),
+        l('A_net', 'section nette', avecUnite(p.A_net, 0, 'mm²')),
+        l('N_u,Rd', '0,9 A_net f_u / gamma_M2 (6.7)', kN(p.N_u_Rd)),
+        l('A_nt, A_nv', 'cisaillement de bloc, aires nettes', `${nombreFr(p.A_nt, 0)} / ${nombreFr(p.A_nv, 0)} mm²`),
+        l('V_eff,1,Rd', 'cisaillement de bloc (3.9)', p.V_eff_Rd === null ? 'sans objet' : kN(p.V_eff_Rd)),
+      ],
+      note: null,
+    });
+  }
+  return blocs;
+}
+
 function htmlBloc(b: Bloc): string {
   const lignes = b.lignes
     .map(
@@ -530,7 +596,7 @@ export function rendreResultat(c: Calcul): string {
     htmlConstats(c),
     '<h3>Taux de travail</h3>',
     htmlTaux(r.taux),
-    '<h3>Cordons</h3>',
+    `<h3>${titreOrganes(c)}</h3>`,
     htmlCordons(c),
     `<p class="note">${echapper(noteMethodes(c))}</p>`,
     '<h3>Dispositions constructives</h3>',

@@ -6,6 +6,7 @@
  * telechargement, la relecture un choix de fichier local.
  */
 
+import type { DonneesEclissage } from '../details/eclissage-boulonne';
 import type { DonneesProfile } from '../details/profile-platine';
 import type { DonneesRecouvrement } from '../details/recouvrement';
 import type { DonneesTe } from '../details/te';
@@ -19,7 +20,8 @@ export type Modele =
   | { detail: 'chaise-ancrage'; donnees: DonneesAssemblage }
   | { detail: 'te'; donnees: DonneesTe }
   | { detail: 'recouvrement'; donnees: DonneesRecouvrement }
-  | { detail: 'profile-platine'; donnees: DonneesProfile };
+  | { detail: 'profile-platine'; donnees: DonneesProfile }
+  | { detail: 'eclissage-boulonne'; donnees: DonneesEclissage };
 
 export type TypeDetail = Modele['detail'];
 
