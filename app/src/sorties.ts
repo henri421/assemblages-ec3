@@ -94,5 +94,6 @@ export function noteDuCalcul(outil: Outil, v: Valeurs, c: Calcul, date: string):
     resultats: blocsDuCalcul(c),
     avertissements: avertissements(c),
     hypotheses: hypotheses(outil),
+    pied: '',
   };
 }

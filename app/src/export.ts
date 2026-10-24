@@ -71,6 +71,11 @@ export interface NoteDeCalcul {
   resultats: Bloc[];
   avertissements: string[];
   hypotheses: string[];
+  /**
+   * Pied de page. Absent : pied historique (compatibilite des notes
+   * construites a la main) ; chaine vide : aucun pied (note de l'application).
+   */
+  pied?: string;
 }
 
 export const AIDE_AU_CALCUL =
@@ -138,6 +143,7 @@ export function noteDeCalculHtml(note: NoteDeCalcul, styles: string = STYLES_TRA
     .map((d) => `<div class="dessin-note"><h3>${notationHtml(d.titre)}</h3>${d.svg}<p class="note">${notationHtml(d.legende)}</p></div>`)
     .join('');
   const tableaux = note.tableaux.map((t) => `<h3>${notationHtml(t.titre)}</h3>${t.html}`).join('');
+  const pied = note.pied ?? `${AIDE_AU_CALCUL} Cette note est un compte rendu, pas une justification reglementaire signee.`;
   const hypotheses =
     note.hypotheses.length === 0
       ? ''
@@ -156,6 +162,6 @@ ${avertissements}
 <h2>Vérifications</h2>${tableaux}
 <h2>Grandeurs du calcul</h2>${note.resultats.map(tableDuBloc).join('')}
 ${hypotheses}
-<p class="pied">${notationHtml(AIDE_AU_CALCUL)} Cette note est un compte rendu, pas une justification reglementaire signee.</p>
+${pied === '' ? '' : `<p class="pied">${notationHtml(pied)}</p>`}
 </body></html>`;
 }
