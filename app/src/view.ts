@@ -7,7 +7,7 @@
  * de calcul : ce qui s'affiche est ce qui s'exporte.
  */
 
-import { tauxFr } from 'aedificium-ui';
+import { notationHtml, tauxFr } from 'aedificium-ui';
 import type {
   ConstatRegle,
   ResultatCordons,
@@ -16,7 +16,7 @@ import type {
   VerificationCas,
 } from '../../src/index';
 import type { Calcul } from './calcul';
-import { avecUnite, echapper, nombreFr } from './format';
+import { avecUnite, nombreFr } from './format';
 
 export interface Ligne {
   symbole: string;
@@ -26,7 +26,7 @@ export interface Ligne {
 
 export interface Bloc {
   titre: string;
-  lignes: Ligne[];
+  lignes: readonly Ligne[];
   /** Precision ou motif d'indisponibilite ; null s'il n'y en a pas. */
   note: string | null;
 }
@@ -94,9 +94,9 @@ export function htmlConstats(c: Calcul): string {
         const mot = k.ok === null ? 'non examine' : k.ok ? 'satisfait' : 'non satisfait';
         return (
           `<li class="constat constat-${etat}" data-constat="${k.nom.toLowerCase()}">` +
-          `<span class="constat-nom">${echapper(k.nom)}</span>` +
+          `<span class="constat-nom">${notationHtml(k.nom)}</span>` +
           `<span class="constat-etat">${mot}</span>` +
-          `<span class="constat-motif">${echapper(k.motif)}</span></li>`
+          `<span class="constat-motif">${notationHtml(k.motif)}</span></li>`
         );
       })
       .join('') +
@@ -114,17 +114,17 @@ export function htmlTaux(taux: readonly Taux[]): string {
     .map((t) => {
       if (!t.applicable) {
         return (
-          `<tr class="sans-objet" data-taux="${t.id}"><td class="libelle">${echapper(t.libelle)}</td>` +
-          `<td class="clause">${echapper(t.clause)}</td>` +
-          `<td class="valeur" colspan="2">sans objet : ${echapper(t.notApplicableReason ?? '')}</td></tr>`
+          `<tr class="sans-objet" data-taux="${t.id}"><td class="libelle">${notationHtml(t.libelle)}</td>` +
+          `<td class="clause">${notationHtml(t.clause)}</td>` +
+          `<td class="valeur" colspan="2">sans objet : ${notationHtml(t.notApplicableReason ?? '')}</td></tr>`
         );
       }
       const depasse = t.valeur > 1;
       const largeur = Math.min(100, Math.max(0, t.valeur * 100));
       return (
         `<tr data-taux="${t.id}" class="${depasse ? 'depasse' : ''}">` +
-        `<td class="libelle">${echapper(t.libelle)}${t.famille === 'service' ? ' <em>(service)</em>' : ''}</td>` +
-        `<td class="clause">${echapper(t.clause)}</td>` +
+        `<td class="libelle">${notationHtml(t.libelle)}${t.famille === 'service' ? ' <em>(service)</em>' : ''}</td>` +
+        `<td class="clause">${notationHtml(t.clause)}</td>` +
         `<td class="valeur">${tauxFr(t.valeur)}</td>` +
         `<td class="barre"><span class="jauge"><span style="width:${largeur.toFixed(1)}%"></span></span></td></tr>`
       );
@@ -151,9 +151,9 @@ export function htmlDispositions(d: ResultatDispositions): string {
     .map(
       (c) =>
         `<tr data-regle="${c.id}" class="regle-${etatRegle(c).replace(/ /g, '-')}">` +
-        `<td class="libelle">${echapper(c.enonce)}</td><td class="clause">${echapper(c.clause)}</td>` +
+        `<td class="libelle">${notationHtml(c.enonce)}</td><td class="clause">${notationHtml(c.clause)}</td>` +
         `<td>${c.severite}</td><td>${etatRegle(c)}</td>` +
-        `<td class="motif">${echapper(c.motif ?? c.notApplicableReason ?? '')}</td></tr>`,
+        `<td class="motif">${notationHtml(c.motif ?? c.notApplicableReason ?? '')}</td></tr>`,
     )
     .join('');
   return (
@@ -167,7 +167,7 @@ export function htmlAssistance(d: ResultatDispositions | null): string {
   if (d === null) return '';
   const alertes = [...d.violations, ...d.avertissements];
   if (alertes.length === 0) return '<p class="assistance-ok">Aucune disposition enfreinte.</p>';
-  return `<ul class="assistance">${alertes.map((a) => `<li>${echapper(a)}</li>`).join('')}</ul>`;
+  return `<ul class="assistance">${alertes.map((a) => `<li>${notationHtml(a)}</li>`).join('')}</ul>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,7 +180,7 @@ function htmlPointsGroupe(r: ResultatCordons): string {
       const d = p.directionnelle;
       const gouv = p === r.gouvernant ? ' class="gouvernant"' : '';
       return (
-        `<tr${gouv}><td>${echapper(p.cordon)} / ${p.extremite}</td>` +
+        `<tr${gouv}><td>${notationHtml(p.cordon)} / ${p.extremite}</td>` +
         `<td>${nombreFr(d.sigma_perp, 1)}</td><td>${nombreFr(d.tau_perp, 1)}</td><td>${nombreFr(d.tau_para, 1)}</td>` +
         `<td>${tauxFr(d.tauxEquivalent)}</td>` +
         `<td>${d.tauxNormal === null ? 'n.a.' : tauxFr(d.tauxNormal)}</td>` +
@@ -197,7 +197,7 @@ function htmlCasChaise(verifs: readonly VerificationCas[], gouvernant: Verificat
       const d = v.directionnelle;
       const gouv = v === gouvernant ? ' class="gouvernant"' : '';
       return (
-        `<tr${gouv}><td>${echapper(v.cas.libelle)}</td>` +
+        `<tr${gouv}><td>${notationHtml(v.cas.libelle)}</td>` +
         `<td>${nombreFr(d.sigma_perp, 1)}</td><td>${nombreFr(d.tau_perp, 1)}</td><td>${nombreFr(d.tau_para, 1)}</td>` +
         `<td>${tauxFr(d.tauxEquivalent)}</td>` +
         `<td>${d.tauxNormal === null ? 'n.a.' : tauxFr(d.tauxNormal)}</td>` +
@@ -210,9 +210,9 @@ function htmlCasChaise(verifs: readonly VerificationCas[], gouvernant: Verificat
 
 function enteteCordons(): string {
   return (
-    '<table class="cordons"><thead><tr><th>Cordon</th><th>&sigma;<sub>&perp;</sub></th>' +
-    '<th>&tau;<sub>&perp;</sub></th><th>&tau;<sub>//</sub></th><th>critere 1</th>' +
-    '<th>0,9 f<sub>u</sub></th><th>simplifiee</th></tr></thead>'
+    '<table class="cordons"><thead><tr><th>Cordon</th><th>σ<sub>⊥</sub></th>' +
+    '<th>τ<sub>⊥</sub></th><th>τ<sub>//</sub></th><th>critère 1</th>' +
+    '<th>0,9 f<sub>u</sub></th><th>simplifiée</th></tr></thead>'
   );
 }
 
@@ -238,14 +238,14 @@ function htmlBoulons(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): stri
   const lignes = r.pression
     .map(
       (p) =>
-        `<tr><td>${echapper(p.position)}</td><td class="valeur">${p.nombre}</td><td class="valeur">${nombreFr(p.alpha_b, 3)}</td>` +
-        `<td class="valeur">${nombreFr(p.k_1, 3)}</td><td class="valeur">${nombreFr(p.F_b_Rd, 1)}</td><td>${echapper(p.plat)}</td></tr>`,
+        `<tr><td>${notationHtml(p.position)}</td><td class="valeur">${p.nombre}</td><td class="valeur">${nombreFr(p.alpha_b, 3)}</td>` +
+        `<td class="valeur">${nombreFr(p.k_1, 3)}</td><td class="valeur">${nombreFr(p.F_b_Rd, 1)}</td><td>${notationHtml(p.plat)}</td></tr>`,
     )
     .join('');
   return (
     `<p class="note">F<sub>v,Rd</sub> = ${nombreFr(r.F_v_Rd, 1)} kN par boulon (${c.modele.donnees.n_s} plan${c.modele.donnees.n_s > 1 ? 's' : ''}), ` +
     `F<sub>v,Ed</sub> = ${nombreFr(r.F_v_Ed, 1)} kN ; groupe ${nombreFr(r.F_groupe, 1)} kN.</p>` +
-    '<div class="defilement"><table class="tableau"><thead><tr><th>position</th><th>nombre</th><th>alpha_b</th><th>k_1</th>' +
+    '<div class="defilement"><table class="tableau"><thead><tr><th>position</th><th>nombre</th><th>α<sub>b</sub></th><th>k<sub>1</sub></th>' +
     `<th>F<sub>b,Rd</sub> (kN)</th><th>plat</th></tr></thead><tbody>${lignes}</tbody></table></div>`
   );
 }
@@ -520,9 +520,15 @@ function blocsTe(c: Extract<Calcul, { detail: 'te' }>): Bloc[] {
 function blocsRecouvrement(c: Extract<Calcul, { detail: 'recouvrement' }>): Bloc[] {
   const r = c.resultat;
   const b = blocGroupe(r.cordons, r.beta_w, r.f_u);
-  b.lignes.push(l('beta_Lw', 'assemblage long, cordons lateraux (§4.11)', sans(r.beta_Lw)));
-  b.note = noteMethodes(c);
-  return [b, blocMetal('Plat attache', r.metalAttache), blocMetal('Plat de base', r.metalBase)];
+  return [
+    {
+      ...b,
+      lignes: [...b.lignes, l('beta_Lw', 'assemblage long, cordons lateraux (§4.11)', sans(r.beta_Lw))],
+      note: noteMethodes(c),
+    },
+    blocMetal('Plat attache', r.metalAttache),
+    blocMetal('Plat de base', r.metalBase),
+  ];
 }
 
 function blocsProfile(c: Extract<Calcul, { detail: 'profile-platine' }>): Bloc[] {
@@ -575,12 +581,12 @@ function htmlBloc(b: Bloc): string {
   const lignes = b.lignes
     .map(
       (x) =>
-        `<tr><th scope="row">${echapper(x.symbole)}</th><td class="libelle">${echapper(x.libelle)}</td>` +
-        `<td class="valeur">${echapper(x.valeur)}</td></tr>`,
+        `<tr><th scope="row">${notationHtml(x.symbole)}</th><td class="libelle">${notationHtml(x.libelle)}</td>` +
+        `<td class="valeur">${notationHtml(x.valeur)}</td></tr>`,
     )
     .join('');
-  const note = b.note === null ? '' : `<p class="note">${echapper(b.note)}</p>`;
-  return `<h3>${echapper(b.titre)}</h3>${lignes === '' ? '' : `<table class="grandeurs"><tbody>${lignes}</tbody></table>`}${note}`;
+  const note = b.note === null ? '' : `<p class="note">${notationHtml(b.note)}</p>`;
+  return `<h3>${notationHtml(b.titre)}</h3>${lignes === '' ? '' : `<table class="grandeurs"><tbody>${lignes}</tbody></table>`}${note}`;
 }
 
 /**
@@ -591,14 +597,14 @@ export function rendreResultat(c: Calcul): string {
   const r = c.resultat;
   return [
     `<p data-role="verdict" data-verdict="${r.verdict}" class="verdict ${classeDuVerdict(r.verdict)}">`,
-    `${echapper(titreDuVerdict(r.verdict))}</p>`,
-    `<p data-role="motif" class="motif">${echapper(r.motif)}</p>`,
+    `${notationHtml(titreDuVerdict(r.verdict))}</p>`,
+    `<p data-role="motif" class="motif">${notationHtml(r.motif)}</p>`,
     htmlConstats(c),
     '<h3>Taux de travail</h3>',
     htmlTaux(r.taux),
     `<h3>${titreOrganes(c)}</h3>`,
     htmlCordons(c),
-    `<p class="note">${echapper(noteMethodes(c))}</p>`,
+    `<p class="note">${notationHtml(noteMethodes(c))}</p>`,
     '<h3>Dispositions constructives</h3>',
     htmlDispositions(r.dispositions),
     '<h3>Grandeurs du calcul</h3>',

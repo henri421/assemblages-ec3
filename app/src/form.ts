@@ -97,11 +97,11 @@ const GROUPE_SOUDAGE: Groupe = {
       unite: '',
       type: 'choix',
       options: [
-        ['angle-monopasse', "cordon d'angle monopasse (Z_b = -5)"],
-        ['angle-multipasse', "cordon d'angle multipasse (Z_b = 0)"],
-        ['penetration-sequence', 'penetration, sequence adaptee (Z_b = 3)'],
-        ['penetration', 'penetration (Z_b = 5)'],
-        ['assemblage-angle', "assemblage d'angle (Z_b = 8)"],
+        ['angle-monopasse', "cordon d'angle monopasse (Zb = -5)"],
+        ['angle-multipasse', "cordon d'angle multipasse (Zb = 0)"],
+        ['penetration-sequence', 'pénétration, séquence adaptée (Zb = 3)'],
+        ['penetration', 'pénétration (Zb = 5)'],
+        ['assemblage-angle', "assemblage d'angle (Zb = 8)"],
       ],
     },
     {
@@ -110,12 +110,12 @@ const GROUPE_SOUDAGE: Groupe = {
       unite: '',
       type: 'choix',
       options: [
-        ['faible', 'faible, retrait libre (Z_d = 0)'],
-        ['moyen', 'moyen (Z_d = 3)'],
-        ['fort', 'fort, retrait empeche (Z_d = 5)'],
+        ['faible', 'faible, retrait libre (Zd = 0)'],
+        ['moyen', 'moyen (Zd = 3)'],
+        ['fort', 'fort, retrait empêché (Zd = 5)'],
       ],
     },
-    { cle: 'prechauffage', libelle: 'prechauffage >= 100 degres C (Z_e = -8)', unite: '', type: 'case' },
+    { cle: 'prechauffage', libelle: 'préchauffage ≥ 100 degrés C (Ze = -8)', unite: '', type: 'case' },
   ],
 };
 

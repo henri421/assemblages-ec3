@@ -8,11 +8,11 @@
  * affiche quand le calcul echoue.
  */
 
+import { blocsEnTexte, notationHtml, notationTexte } from 'aedificium-ui';
 import { lireModele, serialiser, type Modele } from '../../src/index';
 import { assistance, calculer, type Calcul } from './calcul';
 import { dessinsDuCalcul } from './draw';
 import { noteDeCalculHtml, resultatsEnCsv, svgAutonome } from './export';
-import { echapper } from './format';
 import {
   FORMULAIRES,
   OUTILS,
@@ -24,21 +24,9 @@ import {
   type Valeurs,
 } from './form';
 import { avertissements, hypotheses } from './hypotheses';
+import { blocsDEntree, noteDuCalcul } from './sorties';
 import { lireFichier, memoriser, ouvrirOuTelecharger, relire, telecharger } from './storage';
-import {
-  blocsDuCalcul,
-  htmlAssistance,
-  htmlConstats,
-  htmlCordons,
-  titreOrganes,
-  htmlDispositions,
-  htmlTaux,
-  messageDErreur,
-  noteMethodes,
-  rendreResultat,
-  titreDuVerdict,
-  type Bloc,
-} from './view';
+import { blocsDuCalcul, htmlAssistance, messageDErreur, rendreResultat } from './view';
 import './style.css';
 
 function exige<T extends Element>(selecteur: string): T {
@@ -63,7 +51,7 @@ const saisies = new Map<Outil, Valeurs>();
 let outil: Outil = 'chaise-ancrage';
 let dernier: Calcul | null = null;
 
-choixOutil.innerHTML = OUTILS.map((o) => `<option value="${o.id}">${echapper(o.nom)}</option>`).join('');
+choixOutil.innerHTML = OUTILS.map((o) => `<option value="${o.id}">${notationTexte(o.nom)}</option>`).join('');
 
 function valeurs(): Valeurs {
   let v = saisies.get(outil);
@@ -77,7 +65,7 @@ function valeurs(): Valeurs {
 /** Construit le formulaire du detail courant depuis son schema. */
 function construireFormulaire(): void {
   const v = valeurs();
-  description.textContent = OUTILS.find((o) => o.id === outil)?.description ?? '';
+  description.textContent = notationTexte(OUTILS.find((o) => o.id === outil)?.description ?? '');
   formulaire.innerHTML = FORMULAIRES[outil]
     .map((g, i) => {
       const champs = g.champs
@@ -89,12 +77,12 @@ function construireFormulaire(): void {
           const unite = c.unite === '' || c.unite === '-' ? '' : ` (${c.unite})`;
           const entree =
             c.type === 'choix'
-              ? `<select ${attr}>${(c.options ?? []).map(([val, lib]) => `<option value="${val}">${echapper(lib)}</option>`).join('')}</select>`
+              ? `<select ${attr}>${(c.options ?? []).map(([val, lib]) => `<option value="${val}">${notationTexte(lib)}</option>`).join('')}</select>`
               : `<input type="text" inputmode="decimal" ${attr}${c.facultatif ? ' placeholder="facultatif"' : ''} />`;
           return `<label data-ligne="${c.cle}"><span>${c.libelle}${unite}</span>${entree}</label>`;
         })
         .join('');
-      return `<fieldset data-groupe="${i}"><legend>${echapper(g.titre)}</legend>${champs}</fieldset>`;
+      return `<fieldset data-groupe="${i}"><legend>${notationHtml(g.titre)}</legend>${champs}</fieldset>`;
     })
     .join('');
   for (const el of Array.from(formulaire.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-champ]'))) {
@@ -102,7 +90,7 @@ function construireFormulaire(): void {
     if (el instanceof HTMLInputElement && el.type === 'checkbox') el.checked = v[cle] === 'oui';
     else el.value = v[cle] ?? '';
   }
-  limites.textContent = `Hypotheses et limites : ${hypotheses(outil).join(' ')}`;
+  limites.textContent = notationTexte(`Hypothèses et limites : ${hypotheses(outil).join(' ')}`);
   ajusterVisibilite();
 }
 
@@ -129,7 +117,7 @@ function lireChamps(): void {
 }
 
 function afficherErreur(message: string): void {
-  banniereErreur.textContent = message;
+  banniereErreur.textContent = notationTexte(message);
   banniereErreur.hidden = false;
 }
 
@@ -171,11 +159,11 @@ function rafraichir(): void {
     corpsDessins.innerHTML = dessinsDuCalcul(c)
       .map(
         (d, i) =>
-          `<figure><figcaption>${echapper(d.titre)}</figcaption>${d.svg}<p class="legende">${echapper(d.legende)}</p>` +
-          `<button type="button" data-action="exporter-dessin" data-dessin="${i}">${echapper(d.titre)} (SVG)</button></figure>`
+          `<figure><figcaption>${notationHtml(d.titre)}</figcaption>${d.svg}<p class="legende">${notationHtml(d.legende)}</p>` +
+          `<button type="button" data-action="exporter-dessin" data-dessin="${i}">${notationHtml(d.titre)} (SVG)</button></figure>`
       )
       .join('');
-    const alertes = avertissements(c).map((a) => `<p class="alerte">${echapper(a)}</p>`).join('');
+    const alertes = avertissements(c).map((a) => `<p class="alerte">${notationHtml(a)}</p>`).join('');
     corpsResultat.innerHTML = alertes + rendreResultat(c);
     dernier = c;
     memoriser(serialiser(lecture.modele));
@@ -198,54 +186,12 @@ function baseDeNom(c: Calcul): string {
   return `assemblages-ec3-${c.detail === 'te' ? c.modele.donnees.nature : c.detail}`;
 }
 
-/** Les donnees d'entree, telles que saisies, sous forme de blocs. */
-function blocsDEntree(): Bloc[] {
-  const v = valeurs();
-  return FORMULAIRES[outil]
-    .map((g) => ({
-      titre: g.titre,
-      lignes: g.champs
-        .filter((c) => estVisible(g, c, v))
-        .map((c) => ({
-          symbole: c.cle,
-          libelle: c.libelle.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ''),
-          valeur:
-            c.type === 'case'
-              ? v[c.cle] === 'oui' ? 'oui' : 'non'
-              : c.type === 'choix'
-                ? (c.options?.find(([val]) => val === v[c.cle])?.[1] ?? v[c.cle] ?? '')
-                : (v[c.cle] ?? '') === '' ? 'non saisi' : `${v[c.cle]}${c.unite === '' || c.unite === '-' ? '' : ` ${c.unite}`}`,
-        })),
-      note: null,
-    }))
-    .filter((b) => b.lignes.length > 0);
-}
-
 function sansCalcul(): void {
-  afficherErreur('Aucun calcul valide a exporter : corriger la saisie, puis reessayer.');
+  afficherErreur('Aucun calcul valide à exporter : corriger la saisie, puis réessayer.');
 }
 
 function exporterNote(c: Calcul): void {
-  const nom = OUTILS.find((o) => o.id === outil)?.nom ?? outil;
-  const html = noteDeCalculHtml({
-    titre: nom,
-    date: new Date().toISOString().slice(0, 10),
-    entrees: blocsDEntree(),
-    dessins: dessinsDuCalcul(c),
-    verdict: titreDuVerdict(c.resultat.verdict),
-    motif: c.resultat.motif,
-    // Les memes elements, dans le meme ordre, que `rendreResultat` a l'ecran :
-    // la note omettait les constats et la note sur les methodes des cordons.
-    tableaux: [
-      { titre: 'Constats', html: htmlConstats(c) },
-      { titre: 'Taux de travail', html: htmlTaux(c.resultat.taux) },
-      { titre: titreOrganes(c), html: `${htmlCordons(c)}<p class="note">${echapper(noteMethodes(c))}</p>` },
-      { titre: 'Dispositions constructives', html: htmlDispositions(c.resultat.dispositions) },
-    ],
-    resultats: blocsDuCalcul(c),
-    avertissements: avertissements(c),
-    hypotheses: hypotheses(outil),
-  });
+  const html = noteDeCalculHtml(noteDuCalcul(outil, valeurs(), c, new Date().toISOString().slice(0, 10)));
   ouvrirOuTelecharger(`${baseDeNom(c)}-note.html`, html);
 }
 
@@ -276,7 +222,8 @@ document.addEventListener('click', (evenement) => {
     const d = dessinsDuCalcul(c)[i];
     if (d !== undefined) telecharger(`${baseDeNom(c)}-${i + 1}.svg`, svgAutonome(d.svg), 'image/svg+xml;charset=utf-8');
   } else if (action === 'exporter-resultats') {
-    telecharger(`${baseDeNom(c)}-resultats.csv`, resultatsEnCsv([...blocsDEntree(), ...blocsDuCalcul(c)]), 'text/csv;charset=utf-8');
+    const blocs = [...blocsDEntree(outil, valeurs()), ...blocsDuCalcul(c)];
+    telecharger(`${baseDeNom(c)}-resultats.csv`, resultatsEnCsv(blocsEnTexte(blocs)), 'text/csv;charset=utf-8');
   } else if (action === 'exporter-note') {
     exporterNote(c);
   }

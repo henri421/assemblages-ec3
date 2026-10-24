@@ -8,7 +8,7 @@
 
 import {
   JETONS,
-  echapper,
+  notationHtml,
   resultatsEnCsv as resultatsEnCsvCommun,
   svgAutonome as svgAutonomeCommun,
 } from 'aedificium-ui';
@@ -114,12 +114,12 @@ function tableDuBloc(b: Bloc): string {
   const lignes = b.lignes
     .map(
       (l) =>
-        `<tr><td class="sym">${echapper(l.symbole)}</td><td class="lib">${echapper(l.libelle)}</td>` +
-        `<td class="val">${echapper(l.valeur)}</td></tr>`,
+        `<tr><td class="sym">${notationHtml(l.symbole)}</td><td class="lib">${notationHtml(l.libelle)}</td>` +
+        `<td class="val">${notationHtml(l.valeur)}</td></tr>`,
     )
     .join('');
-  const note = b.note === null ? '' : `<p class="note">${echapper(b.note)}</p>`;
-  return `<h3>${echapper(b.titre)}</h3>${lignes === '' ? '' : `<table>${lignes}</table>`}${note}`;
+  const note = b.note === null ? '' : `<p class="note">${notationHtml(b.note)}</p>`;
+  return `<h3>${notationHtml(b.titre)}</h3>${lignes === '' ? '' : `<table>${lignes}</table>`}${note}`;
 }
 
 /**
@@ -132,29 +132,29 @@ function tableDuBloc(b: Bloc): string {
  * justification reglementaire signee.
  */
 export function noteDeCalculHtml(note: NoteDeCalcul, styles: string = STYLES_TRACE): string {
-  const avertissements = note.avertissements.map((a) => `<p class="avertissement">${echapper(a)}</p>`).join('');
+  const avertissements = note.avertissements.map((a) => `<p class="avertissement">${notationHtml(a)}</p>`).join('');
   const dessins = note.dessins
-    .map((d) => `<div class="dessin-note"><h3>${echapper(d.titre)}</h3>${d.svg}<p class="note">${echapper(d.legende)}</p></div>`)
+    .map((d) => `<div class="dessin-note"><h3>${notationHtml(d.titre)}</h3>${d.svg}<p class="note">${notationHtml(d.legende)}</p></div>`)
     .join('');
-  const tableaux = note.tableaux.map((t) => `<h3>${echapper(t.titre)}</h3>${t.html}`).join('');
+  const tableaux = note.tableaux.map((t) => `<h3>${notationHtml(t.titre)}</h3>${t.html}`).join('');
   const hypotheses =
     note.hypotheses.length === 0
       ? ''
-      : `<h2>Hypotheses et limites</h2><ul>${note.hypotheses.map((h) => `<li>${echapper(h)}</li>`).join('')}</ul>`;
+      : `<h2>Hypotheses et limites</h2><ul>${note.hypotheses.map((h) => `<li>${notationHtml(h)}</li>`).join('')}</ul>`;
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" />
-<title>Note de calcul — ${echapper(note.titre)}</title>
+<title>Note de calcul — ${notationHtml(note.titre)}</title>
 <style>${styles}${STYLE_NOTE}</style></head>
 <body>
-<h1>Note de calcul — ${echapper(note.titre)} (EN 1993-1-8:2005)</h1>
-<p class="date">${echapper(note.date)}</p>
+<h1>Note de calcul — ${notationHtml(note.titre)} (EN 1993-1-8:2005)</h1>
+<p class="date">${notationHtml(note.date)}</p>
 ${avertissements}
 <h2>Donnees d'entree</h2>${note.entrees.map(tableDuBloc).join('')}
 <h2>Geometrie</h2>${dessins}
-<h2>Verdict</h2><p class="verdict">${echapper(note.verdict)}</p><p class="motif">${echapper(note.motif)}</p>
+<h2>Verdict</h2><p class="verdict">${notationHtml(note.verdict)}</p><p class="motif">${notationHtml(note.motif)}</p>
 <h2>Verifications</h2>${tableaux}
 <h2>Grandeurs du calcul</h2>${note.resultats.map(tableDuBloc).join('')}
 ${hypotheses}
-<p class="pied">${echapper(AIDE_AU_CALCUL)} Cette note est un compte rendu, pas une justification reglementaire signee.</p>
+<p class="pied">${notationHtml(AIDE_AU_CALCUL)} Cette note est un compte rendu, pas une justification reglementaire signee.</p>
 </body></html>`;
 }

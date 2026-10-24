@@ -361,7 +361,7 @@ export function dessinsDuCalcul(c: Calcul): Dessin[] {
         {
           titre: 'Vue en plan',
           svg: planEclissage(c),
-          legende: 'Plat de base (clair), plat attache (fonce), trous a d_0. Fleche : effort N.',
+          legende: 'Plat de base (clair), plat attaché (foncé), trous à d₀. Flèche : effort N.',
         },
       ];
     case 'profile-platine':
