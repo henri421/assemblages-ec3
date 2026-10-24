@@ -126,7 +126,7 @@ const ORDRE: readonly QualiteZ[] = ['aucune', 'Z15', 'Z25', 'Z35'];
  */
 export function verifierArrachement(d: DonneesArrachement): ResultatArrachement {
   if (!Number.isFinite(d.t) || d.t <= 0) {
-    throw new Error('L epaisseur t de la piece doit etre un nombre strictement positif (mm).');
+    throw new Error('L epaisseur t de l element doit etre un nombre strictement positif (mm).');
   }
   if (!Number.isFinite(d.a) || d.a <= 0) {
     throw new Error('La gorge a doit etre un nombre strictement positif (mm).');

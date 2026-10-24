@@ -141,7 +141,7 @@ export function planChaise(c: Extract<Calcul, { detail: 'chaise-ancrage' }>): st
     for (const s of [-1, 1]) contenu.push(ligne('appui', -b / 2, (s * plats.L) / 2, b / 2, (s * plats.L) / 2));
   }
   const demi = Math.max(h / 2, schema === 'appui-extremites' ? (plats.L ?? 0) / 2 : 0);
-  return svg({ x0: -b / 2, y0: -demi, x1: b / 2, y1: demi }, contenu, 'Vue en plan de la tete d ancrage', defs);
+  return svg({ x0: -b / 2, y0: -demi, x1: b / 2, y1: demi }, contenu, "Vue en plan de la tête d'ancrage", defs);
 }
 
 /**
@@ -188,7 +188,7 @@ export function coupeChaise(c: Extract<Calcul, { detail: 'chaise-ancrage' }>): s
   return svg(
     { x0: -b / 2 - 0.15 * b, y0: -1.25 * h_w, x1: b / 2 + 0.15 * b, y1: t + hSupport },
     contenu,
-    'Coupe de la tete d ancrage',
+    "Coupe de la tête d'ancrage",
   );
 }
 
@@ -237,7 +237,7 @@ export function coupeTe(c: Extract<Calcul, { detail: 'te' }>): string {
     contenu.push(fleche(0, -hP * (vers < 0 ? 0.55 : 1.1), -hP * (vers < 0 ? 1.1 : 0.55), taille));
   }
   const bas = d.nature === 'cruciforme' ? t_b + hP : t_b;
-  return svg({ x0: -largeur / 2, y0: -1.15 * hP, x1: largeur / 2, y1: bas }, contenu, 'Coupe du plat soude');
+  return svg({ x0: -largeur / 2, y0: -1.15 * hP, x1: largeur / 2, y1: bas }, contenu, 'Coupe du plat soudé');
 }
 
 // ---------------------------------------------------------------------------
@@ -292,7 +292,7 @@ export function planProfile(c: Extract<Calcul, { detail: 'profile-platine' }>): 
   return svg(
     { x0: -b / 2 - marge, y0: -h / 2 - marge, x1: b / 2 + marge, y1: h / 2 + marge },
     contenu,
-    'Vue en plan du profile et de ses cordons',
+    'Vue en plan du profilé et de ses cordons',
   );
 }
 
@@ -317,7 +317,7 @@ export function planEclissage(c: Extract<Calcul, { detail: 'eclissage-boulonne' 
   const taille = Math.max(8, 0.06 * d.b_b);
   contenu.push(fleche(0, L_r + 0.4 * lPlat, L_r + 0.95 * lPlat, taille));
   const demi = Math.max(d.b_b, d.b_p) / 2;
-  return svg({ x0: -demi, y0: -lBase, x1: demi, y1: L_r + lPlat }, contenu, 'Vue en plan de l eclissage boulonne');
+  return svg({ x0: -demi, y0: -lBase, x1: demi, y1: L_r + lPlat }, contenu, "Vue en plan de l'éclissage boulonné");
 }
 
 export interface Dessin {
@@ -336,24 +336,24 @@ export function dessinsDuCalcul(c: Calcul): Dessin[] {
           svg: planChaise(c),
           legende:
             c.modele.donnees.assemblage.schema === 'appui-continu'
-              ? "Ames en coupe, couronne d'appui, percage. Tirets : contour efficace du troncon en te (couronne et ames elargies de c), ecrete a la platine."
-              : "Ames en coupe, couronne d'appui, percage. Traits forts : lignes d'appui, a la portee L.",
+              ? "Âmes en coupe, couronne d'appui, perçage. Tirets : contour efficace du tronçon en té (couronne et âmes élargies de c), écrêté à la platine."
+              : "Âmes en coupe, couronne d'appui, perçage. Traits forts : lignes d'appui, à la portée L.",
         },
         {
           titre: 'Coupe',
           svg: coupeChaise(c),
           legende:
-            "Platine sur le support, ames soudees sur sa face libre, bloc d'ancrage entre elles. Tirets : diffusion a 45 degres de la couronne dans l'epaisseur.",
+            "Platine sur le support, âmes soudées sur sa face libre, bloc d'ancrage entre elles. Tirets : diffusion à 45 degrés de la couronne dans l'épaisseur.",
         },
       ];
     case 'te':
-      return [{ titre: 'Coupe', svg: coupeTe(c), legende: 'Piece de base en coupe, plat attache, soudures en noir. Fleche : effort N.' }];
+      return [{ titre: 'Coupe', svg: coupeTe(c), legende: 'Élément de base en coupe, plat attaché, soudures en noir. Flèche : effort N.' }];
     case 'recouvrement':
       return [
         {
           titre: 'Vue en plan',
           svg: planRecouvrement(c),
-          legende: "Plat de base (clair), plat attache (fonce), cordons en trait fort. Fleche : effort N.",
+          legende: 'Plat de base (clair), plat attaché (foncé), cordons en trait fort. Flèche : effort N.',
         },
       ];
     case 'eclissage-boulonne':
@@ -369,7 +369,7 @@ export function dessinsDuCalcul(c: Calcul): Dessin[] {
         {
           titre: 'Vue en plan',
           svg: planProfile(c),
-          legende: 'Section du profile sur la platine ; traits forts : cordons, a la position de leur gorge rabattue.',
+          legende: 'Section du profilé sur la platine ; traits forts : cordons, à la position de leur gorge rabattue.',
         },
       ];
   }

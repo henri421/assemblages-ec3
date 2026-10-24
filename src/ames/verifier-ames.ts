@@ -55,7 +55,7 @@ const DEVERSEMENT =
   'Le chant libre des ames est la fibre comprimee et rien ne le tient lateralement. Le ' +
   'deversement n est pas calcule : il est couvert par le critere de voilement par torsion ' +
   'du raidisseur plat (EN 1993-1-5 §9.2.1(8)), qui exclut la rotation de l ame autour de ' +
-  'son pied, seul mode par lequel ce chant se deroberait sur une piece aussi courte.';
+  'son pied, seul mode par lequel ce chant se deroberait sur un element aussi court.';
 
 /**
  * Verifications des ames selon le schema d appui.

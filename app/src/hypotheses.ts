@@ -55,7 +55,7 @@ export function hypotheses(outil: Outil): string[] {
       ];
     case 'profile-platine':
       return [
-        "Répartition élastique de N et des moments sur toutes les gorges ; l'effort tranchant Vz par l'âme, Vy par les semelles.",
+        "Répartition élastique de l'effort N, des moments sur toutes les gorges ; l'effort tranchant Vz par l'âme, Vy par les semelles.",
         'Congé de raccordement négligé dans la longueur des cordons intérieurs.',
         'Flexion et appui de la platine non vérifiés ; résistance du profilé non vérifiée.',
         ...COMMUNES,

@@ -8,10 +8,11 @@
 
 import {
   JETONS,
-  notationHtml,
   resultatsEnCsv as resultatsEnCsvCommun,
   svgAutonome as svgAutonomeCommun,
 } from 'aedificium-ui';
+
+import { notationHtml } from './accents';
 
 import type { Bloc } from './view';
 
@@ -140,7 +141,7 @@ export function noteDeCalculHtml(note: NoteDeCalcul, styles: string = STYLES_TRA
   const hypotheses =
     note.hypotheses.length === 0
       ? ''
-      : `<h2>Hypotheses et limites</h2><ul>${note.hypotheses.map((h) => `<li>${notationHtml(h)}</li>`).join('')}</ul>`;
+      : `<h2>Hypothèses et limites</h2><ul>${note.hypotheses.map((h) => `<li>${notationHtml(h)}</li>`).join('')}</ul>`;
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" />
 <title>Note de calcul — ${notationHtml(note.titre)}</title>
@@ -149,10 +150,10 @@ export function noteDeCalculHtml(note: NoteDeCalcul, styles: string = STYLES_TRA
 <h1>Note de calcul — ${notationHtml(note.titre)} (EN 1993-1-8:2005)</h1>
 <p class="date">${notationHtml(note.date)}</p>
 ${avertissements}
-<h2>Donnees d'entree</h2>${note.entrees.map(tableDuBloc).join('')}
-<h2>Geometrie</h2>${dessins}
+<h2>Données d'entrée</h2>${note.entrees.map(tableDuBloc).join('')}
+<h2>Géométrie</h2>${dessins}
 <h2>Verdict</h2><p class="verdict">${notationHtml(note.verdict)}</p><p class="motif">${notationHtml(note.motif)}</p>
-<h2>Verifications</h2>${tableaux}
+<h2>Vérifications</h2>${tableaux}
 <h2>Grandeurs du calcul</h2>${note.resultats.map(tableDuBloc).join('')}
 ${hypotheses}
 <p class="pied">${notationHtml(AIDE_AU_CALCUL)} Cette note est un compte rendu, pas une justification reglementaire signee.</p>

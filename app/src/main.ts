@@ -8,7 +8,8 @@
  * affiche quand le calcul echoue.
  */
 
-import { blocsEnTexte, notationHtml, notationTexte } from 'aedificium-ui';
+import { blocsEnTexte } from 'aedificium-ui';
+import { notationHtml, notationTexte } from './accents';
 import { lireModele, serialiser, type Modele } from '../../src/index';
 import { assistance, calculer, type Calcul } from './calcul';
 import { dessinsDuCalcul } from './draw';

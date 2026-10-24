@@ -23,13 +23,13 @@ import { lireNombre } from './format';
 export type Outil = 'chaise-ancrage' | 'te' | 'cruciforme' | 'angle' | 'recouvrement' | 'profile-platine' | 'eclissage-boulonne';
 
 export const OUTILS: ReadonlyArray<{ id: Outil; nom: string; description: string }> = [
-  { id: 'chaise-ancrage', nom: "Tete d'ancrage de tirant", description: 'platine raidie par deux ames, sur beton ou sur lierne' },
-  { id: 'te', nom: 'Te soude', description: 'plat soude perpendiculairement sur une platine' },
-  { id: 'cruciforme', nom: 'Cruciforme', description: 'deux plats de part et d autre d un plat traversant' },
-  { id: 'angle', nom: "Assemblage d'angle", description: 'plat soude au bord d une autre piece' },
-  { id: 'recouvrement', nom: 'Recouvrement', description: 'plat sur plat, cordons lateraux et frontal' },
-  { id: 'profile-platine', nom: 'Profile sur platine', description: 'profile en I soude sur une platine' },
-  { id: 'eclissage-boulonne', nom: 'Eclissage boulonne', description: 'plats boulonnes sous effort axial, boulons ordinaires' },
+  { id: 'chaise-ancrage', nom: "Tête d'ancrage de tirant", description: 'platine raidie par deux âmes, sur béton ou sur lierne' },
+  { id: 'te', nom: 'Te soudé', description: 'plat soudé perpendiculairement sur une platine' },
+  { id: 'cruciforme', nom: 'Cruciforme', description: "deux plats de part et d'autre d'un plat traversant" },
+  { id: 'angle', nom: "Assemblage d'angle", description: "plat soudé au bord d'une autre tôle" },
+  { id: 'recouvrement', nom: 'Recouvrement', description: 'plat sur plat, cordons latéraux et frontal' },
+  { id: 'profile-platine', nom: 'Profilé sur platine', description: 'profilé en I soudé sur une platine' },
+  { id: 'eclissage-boulonne', nom: 'Éclissage boulonné', description: 'plats boulonnés sous effort axial, boulons ordinaires' },
 ];
 
 export type Valeurs = Record<string, string>;
@@ -70,12 +70,12 @@ const NUANCES_OPTIONS = [
 ] as const;
 
 const GROUPE_MATERIAU: Groupe = {
-  titre: 'Materiau',
+  titre: 'Matériau',
   champs: [
     { cle: 'nuance', libelle: 'Nuance', unite: '', type: 'choix', options: NUANCES_OPTIONS },
     {
       cle: 'qualiteZ',
-      libelle: "Qualite dans l'epaisseur (EN 10164)",
+      libelle: "Qualité dans l'épaisseur (EN 10164)",
       unite: '',
       type: 'choix',
       options: [
@@ -126,7 +126,7 @@ function groupeCoefficients(avecBeton: boolean): Groupe {
       nombre('gamma_M0', '&gamma;<sub>M0</sub>', '-'),
       nombre('gamma_M1', '&gamma;<sub>M1</sub>', '-'),
       nombre('gamma_M2', '&gamma;<sub>M2</sub>', '-'),
-      ...(avecBeton ? [nombre('gamma_c', '&gamma;<sub>c</sub> (beton)', '-', { visible: (v: Valeurs) => v.type_appui === 'beton' })] : []),
+      ...(avecBeton ? [nombre('gamma_c', '&gamma;<sub>c</sub> (béton)', '-', { visible: (v: Valeurs) => v.type_appui === 'beton' })] : []),
     ],
   };
 }
@@ -139,35 +139,35 @@ const CHAISE: Groupe[] = [
   {
     titre: 'Platine',
     champs: [
-      nombre('b', 'b, perpendiculaire aux ames', 'mm'),
-      nombre('h', 'h, parallele aux ames', 'mm'),
-      nombre('t', 't, epaisseur', 'mm'),
-      nombre('d_0', 'd<sub>0</sub>, percage', 'mm'),
+      nombre('b', 'b, perpendiculaire aux âmes', 'mm'),
+      nombre('h', 'h, parallèle aux âmes', 'mm'),
+      nombre('t', 't, épaisseur', 'mm'),
+      nombre('d_0', 'd<sub>0</sub>, perçage', 'mm'),
     ],
   },
   {
-    titre: 'Ames (raidisseurs)',
+    titre: 'Âmes (raidisseurs)',
     champs: [
-      nombre('t_w', 't<sub>w</sub>, epaisseur', 'mm'),
+      nombre('t_w', 't<sub>w</sub>, épaisseur', 'mm'),
       nombre('h_w', 'h<sub>w</sub>, hauteur', 'mm'),
       nombre('L_w', 'L<sub>w</sub>, longueur', 'mm'),
       nombre('e', 'e, entraxe', 'mm'),
     ],
   },
   {
-    titre: 'Cordons ame-platine',
+    titre: 'Cordons âme-platine',
     champs: [
       nombre('a', 'a, gorge', 'mm'),
       nombre('l_eff', 'l<sub>eff</sub> (vide : L<sub>w</sub>)', 'mm', { facultatif: true }),
-      { cle: 'contactDirect', libelle: 'contact direct prescrit et controle', unite: '', type: 'case' },
+      { cle: 'contactDirect', libelle: 'contact direct prescrit et contrôlé', unite: '', type: 'case' },
     ],
   },
   {
-    titre: "Tete d'ancrage",
+    titre: "Tête d'ancrage",
     champs: [
-      nombre('D', 'D, couronne d appui', 'mm'),
+      nombre('D', "D, couronne d'appui", 'mm'),
       nombre('excentrement', 'excentrement du tirant', 'mm', { facultatif: true }),
-      nombre('inclinaison', 'inclinaison / normale', 'degres'),
+      nombre('inclinaison', 'inclinaison / normale', 'degrés'),
     ],
   },
   {
@@ -175,12 +175,12 @@ const CHAISE: Groupe[] = [
     champs: [
       {
         cle: 'schema',
-        libelle: 'Schema',
+        libelle: 'Schéma',
         unite: '',
         type: 'choix',
         options: [
-          ['appui-continu', 'platine portee sur toute sa surface'],
-          ['appui-extremites', 'platine portee a ses extremites'],
+          ['appui-continu', 'platine portée sur toute sa surface'],
+          ['appui-extremites', 'platine portée à ses extrémités'],
         ],
       },
       {
@@ -189,14 +189,14 @@ const CHAISE: Groupe[] = [
         unite: '',
         type: 'choix',
         options: [
-          ['beton', 'beton'],
-          ['lierne-acier', 'lierne (profil acier)'],
+          ['beton', 'béton'],
+          ['lierne-acier', 'lierne (profilé acier)'],
         ],
       },
-      nombre('L', 'L, portee dans le sens des ames', 'mm', { visible: extremites }),
+      nombre('L', 'L, portée dans le sens des âmes', 'mm', { visible: extremites }),
       nombre('f_ck', 'f<sub>ck</sub>', 'MPa', { visible: beton }),
-      nombre('k_j', 'k<sub>j</sub>, concentration (1 a 3)', '-', { visible: beton }),
-      nombre('l_appui', "l<sub>appui</sub>, longueur d'appui de chaque extremite", 'mm', {
+      nombre('k_j', 'k<sub>j</sub>, concentration (1 à 3)', '-', { visible: beton }),
+      nombre('l_appui', "l<sub>appui</sub>, longueur d'appui de chaque extrémité", 'mm', {
         visible: (v) => extremites(v) && beton(v),
       }),
       nombre('t_w_lierne', 'lierne : t<sub>w</sub>', 'mm', { visible: lierne }),
@@ -209,10 +209,10 @@ const CHAISE: Groupe[] = [
     titre: 'Actions',
     champs: [
       nombre('N_ELU', 'N<sub>ELU</sub>, calcul de la paroi', 'kN'),
-      nombre('P_p', "P<sub>p</sub>, traction d'epreuve", 'kN', { facultatif: true }),
-      nombre('F_tk', "F<sub>tk</sub>, resistance de l'armature", 'kN', { facultatif: true }),
+      nombre('P_p', "P<sub>p</sub>, traction d'épreuve", 'kN', { facultatif: true }),
+      nombre('F_tk', "F<sub>tk</sub>, résistance de l'armature", 'kN', { facultatif: true }),
       nombre('P_blocage', 'P<sub>blocage</sub>, pour le service', 'kN', { facultatif: true }),
-      nombre('delta_lim', 'fleche admise au blocage', 'mm', { facultatif: true }),
+      nombre('delta_lim', 'flèche admise au blocage', 'mm', { facultatif: true }),
     ],
   },
   GROUPE_MATERIAU,
@@ -223,10 +223,10 @@ const CHAISE: Groupe[] = [
 function groupesTe(base: string): Groupe[] {
   return [
     {
-      titre: 'Pieces',
+      titre: 'Éléments',
       champs: [
-        nombre('t_p', 't<sub>p</sub>, plat attache', 'mm'),
-        nombre('L', 'L, longueur soudee', 'mm'),
+        nombre('t_p', 't<sub>p</sub>, plat attaché', 'mm'),
+        nombre('L', 'L, longueur soudée', 'mm'),
         nombre('t_b', `t<sub>b</sub>, ${base}`, 'mm'),
       ],
     },
@@ -240,19 +240,19 @@ function groupesTe(base: string): Groupe[] {
           type: 'choix',
           options: [
             ['angle', "cordons d'angle"],
-            ['penetration-partielle', 'penetration partielle'],
-            ['penetration-totale', 'pleine penetration'],
+            ['penetration-partielle', 'pénétration partielle'],
+            ['penetration-totale', 'pleine pénétration'],
           ],
         },
-        nombre('a', 'a, gorge ou penetration', 'mm', { visible: (v) => v.type_soudure !== 'penetration-totale' }),
+        nombre('a', 'a, gorge ou pénétration', 'mm', { visible: (v) => v.type_soudure !== 'penetration-totale' }),
         {
           cle: 'cotes',
-          libelle: 'Cotes soudes',
+          libelle: 'Côtés soudés',
           unite: '',
           type: 'choix',
           options: [
-            ['2', 'deux cotes'],
-            ['1', 'un seul cote'],
+            ['2', 'deux côtés'],
+            ['1', 'un seul côté'],
           ],
           visible: (v) => v.type_soudure !== 'penetration-totale',
         },
@@ -263,7 +263,7 @@ function groupesTe(base: string): Groupe[] {
       champs: [
         nombre('N', 'N, traction +', 'kN'),
         nombre('V_para', 'V<sub>//</sub>, le long du cordon', 'kN'),
-        nombre('V_perp', 'V<sub>&perp;</sub>, a travers le plat', 'kN'),
+        nombre('V_perp', 'V<sub>&perp;</sub>, à travers le plat', 'kN'),
         nombre('M_plan', 'M dans le plan du plat', 'kN.m'),
         nombre('M_hors', "M autour de l'axe du cordon", 'kN.m'),
       ],
@@ -278,8 +278,8 @@ const RECOUVREMENT: Groupe[] = [
   {
     titre: 'Plats',
     champs: [
-      nombre('b_p', 'b<sub>p</sub>, plat attache', 'mm'),
-      nombre('t_p', 't<sub>p</sub>, plat attache', 'mm'),
+      nombre('b_p', 'b<sub>p</sub>, plat attaché', 'mm'),
+      nombre('t_p', 't<sub>p</sub>, plat attaché', 'mm'),
       nombre('b_b', 'b<sub>b</sub>, plat de base', 'mm'),
       nombre('t_b', 't<sub>b</sub>, plat de base', 'mm'),
       nombre('L_r', 'L<sub>r</sub>, recouvrement', 'mm'),
@@ -289,7 +289,7 @@ const RECOUVREMENT: Groupe[] = [
     titre: 'Cordons',
     champs: [
       nombre('a', 'a, gorge', 'mm'),
-      { cle: 'lateraux', libelle: 'cordons lateraux', unite: '', type: 'case' },
+      { cle: 'lateraux', libelle: 'cordons latéraux', unite: '', type: 'case' },
       { cle: 'frontal', libelle: 'cordon frontal', unite: '', type: 'case' },
     ],
   },
@@ -307,24 +307,24 @@ const RECOUVREMENT: Groupe[] = [
 
 const PROFILE: Groupe[] = [
   {
-    titre: 'Profile',
+    titre: 'Profilé',
     champs: [
       nombre('h', 'h, hauteur', 'mm'),
       nombre('b', 'b, largeur', 'mm'),
-      nombre('t_w', 't<sub>w</sub>, ame', 'mm'),
+      nombre('t_w', 't<sub>w</sub>, âme', 'mm'),
       nombre('t_f', 't<sub>f</sub>, semelle', 'mm'),
-      nombre('t_platine', 'platine, epaisseur', 'mm'),
+      nombre('t_platine', 'platine, épaisseur', 'mm'),
     ],
   },
   {
     titre: 'Cordons',
-    champs: [nombre('a_f', 'a<sub>f</sub>, semelles', 'mm'), nombre('a_w', 'a<sub>w</sub>, ame', 'mm')],
+    champs: [nombre('a_f', 'a<sub>f</sub>, semelles', 'mm'), nombre('a_w', 'a<sub>w</sub>, âme', 'mm')],
   },
   {
     titre: 'Sollicitations',
     champs: [
       nombre('N', 'N, traction +', 'kN'),
-      nombre('V_z', "V<sub>z</sub>, selon l'ame", 'kN'),
+      nombre('V_z', "V<sub>z</sub>, selon l'âme", 'kN'),
       nombre('V_y', 'V<sub>y</sub>, selon les semelles', 'kN'),
       nombre('M_y', 'M<sub>y</sub>, flexion forte', 'kN.m'),
       nombre('M_z', 'M<sub>z</sub>, flexion faible', 'kN.m'),
@@ -339,10 +339,10 @@ const ECLISSAGE: Groupe[] = [
   {
     titre: 'Plats',
     champs: [
-      nombre('b_p', 'b<sub>p</sub>, plat attache', 'mm'),
-      nombre('t_p', 't<sub>p</sub>, plat attache', 'mm'),
+      nombre('b_p', 'b<sub>p</sub>, plat attaché', 'mm'),
+      nombre('t_p', 't<sub>p</sub>, plat attaché', 'mm'),
       nombre('b_b', 'b<sub>b</sub>, plat de base ou couvre-joints', 'mm'),
-      nombre('t_b', 't<sub>b</sub>, epaisseur (totale des couvre-joints en double)', 'mm'),
+      nombre('t_b', 't<sub>b</sub>, épaisseur (totale des couvre-joints en double)', 'mm'),
       {
         cle: 'n_s',
         libelle: 'plans de cisaillement',
@@ -367,16 +367,16 @@ const ECLISSAGE: Groupe[] = [
       },
       {
         cle: 'd_boulon',
-        libelle: 'diametre',
+        libelle: 'diamètre',
         unite: '',
         type: 'choix',
         options: DIAMETRES_BOULON.map((d) => [String(d), `M${d}`] as const),
       },
       { cle: 'filetage', libelle: 'filetage dans le plan de cisaillement', unite: '', type: 'case' },
-      nombre('n_1', 'n<sub>1</sub>, rangees dans le sens de l effort', ''),
+      nombre('n_1', "n<sub>1</sub>, rangées dans le sens de l'effort", ''),
       nombre('n_2', 'n<sub>2</sub>, files en travers', ''),
       nombre('e_1', 'e<sub>1</sub>, pince longitudinale', 'mm'),
-      nombre('p_1', 'p<sub>1</sub>, entraxe des rangees', 'mm', { visible: (v) => (lireNombre(v.n_1 ?? '') ?? 1) > 1 }),
+      nombre('p_1', 'p<sub>1</sub>, entraxe des rangées', 'mm', { visible: (v) => (lireNombre(v.n_1 ?? '') ?? 1) > 1 }),
       nombre('p_2', 'p<sub>2</sub>, entraxe des files', 'mm', { visible: (v) => (lireNombre(v.n_2 ?? '') ?? 1) > 1 }),
     ],
   },
@@ -392,7 +392,7 @@ export const FORMULAIRES: Record<Outil, Groupe[]> = {
   'chaise-ancrage': CHAISE,
   te: groupesTe('platine'),
   cruciforme: groupesTe('plat traversant'),
-  angle: groupesTe("piece d'angle"),
+  angle: groupesTe("tôle d'angle"),
   recouvrement: RECOUVREMENT,
   'profile-platine': PROFILE,
   'eclissage-boulonne': ECLISSAGE,
@@ -485,7 +485,7 @@ export function lireSaisie(outil: Outil, v: Valeurs): Lecture {
             lus[c.cle] = undefined;
             continue;
           }
-          throw new Refus(c.cle, `Saisie invalide : le champ ${c.cle.replace(/_/g, ' ')} doit etre un nombre.`);
+          throw new Refus(c.cle, `Saisie invalide : le champ ${c.cle.replace(/_/g, ' ')} doit être un nombre.`);
         }
         lus[c.cle] = n;
       }
@@ -510,8 +510,7 @@ function profil(n: Record<string, number | undefined>): ProfilEC3 {
 /** Un nombre exige (champ visible et non facultatif) : present par construction. */
 function exige(n: Record<string, number | undefined>, cle: string): number {
   const x = n[cle];
-  if (x === undefined) throw new Refus(cle, `Saisie invalide : le champ ${cle} est requis.`);
-  return x;
+  if (x === undefined) throw new Refus(cle, `Saisie invalide : le champ ${cle} est requis.`);  return x;
 }
 
 function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefined>): Modele {

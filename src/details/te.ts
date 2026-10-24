@@ -137,11 +137,11 @@ const REGLES_TE: readonly Regle<ContexteTe>[] = [
     id: 'penetration-totale',
     clause: 'EN 1993-1-8 §4.7.1(1)',
     severite: 'information',
-    enonce: 'pleine penetration : resistance de la piece la plus faible',
+    enonce: 'pleine penetration : resistance de l element le plus faible',
     applicabilite: ({ donnees }) =>
       donnees.soudure.type === 'penetration-totale' ? null : 'pas de pleine penetration',
     evaluer: () =>
-      'une soudure a pleine penetration a la resistance de la plus faible des pieces assemblees, ' +
+      'une soudure a pleine penetration a la resistance du plus faible des elements assembles, ' +
       'sous reserve d un metal d apport au moins aussi resistant',
   },
 ];
@@ -166,7 +166,7 @@ export function verifierTe(d: DonneesTe): ResultatTe {
   const profil = validerProfil(d.profil ?? ec3Recommande());
   const t_p = positif(d.t_p, 'L epaisseur du plat t_p', 'mm');
   const L = positif(d.L, 'La longueur soudee L', 'mm');
-  const t_b = positif(d.t_b, 'L epaisseur de la piece de base t_b', 'mm');
+  const t_b = positif(d.t_b, 'L epaisseur de l element de base t_b', 'mm');
   const a = positif(d.soudure.a, 'La gorge a', 'mm');
   const s = {
     N: fini(d.sollicitations.N, 'L effort N', 'kN'),
@@ -245,7 +245,7 @@ export function verifierTe(d: DonneesTe): ResultatTe {
 
   const liste: Taux[] = [
     cordons === null
-      ? sansObjet('soudure', 'EN 1993-1-8 §4.7.1', 'soudure', 'pleine penetration : resistance de la piece la plus faible')
+      ? sansObjet('soudure', 'EN 1993-1-8 §4.7.1', 'soudure', 'pleine penetration : resistance de l element le plus faible')
       : taux(
           'soudure',
           type === 'angle' ? 'EN 1993-1-8 §4.5.3.2' : 'EN 1993-1-8 §4.7.2',
@@ -256,7 +256,7 @@ export function verifierTe(d: DonneesTe): ResultatTe {
     taux(
       'arrachement-lamellaire',
       'EN 1993-1-10 §3.2',
-      `arrachement lamellaire de la piece de base, Z_Ed = ${arrachement.Z_Ed}`,
+      `arrachement lamellaire de l element de base, Z_Ed = ${arrachement.Z_Ed}`,
       arrachement.taux,
     ),
   ];

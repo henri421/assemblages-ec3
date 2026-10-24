@@ -113,7 +113,7 @@ export const RETOURS_EXTREMITE: Regle<ContexteCordons> = {
   evaluer: (ctx) => {
     const cote = Math.max(...angles(ctx).map((c) => c.a * Math.SQRT2));
     return (
-      'les cordons qui s arretent en bout de piece se retournent sans interruption, a pleine ' +
+      'les cordons qui s arretent en bout d element se retournent sans interruption, a pleine ' +
       `section, sur au moins deux fois leur cote, soit ${nb(2 * cote)} mm, sauf impossibilite d acces`
     );
   },
@@ -123,13 +123,13 @@ export const EPAISSEUR_MIN: Regle<ContexteCordons> = {
   id: 'epaisseur-min',
   clause: 'EN 1993-1-8 §4.1(1)',
   severite: 'bloquante',
-  enonce: 'pieces soudees d au moins 4 mm (domaine d application)',
+  enonce: 'elements soudes d au moins 4 mm (domaine d application)',
   applicabilite: () => null,
   evaluer: (ctx) => {
     const minces = ctx.epaisseurs.filter((t) => t < 4);
     return minces.length === 0
       ? null
-      : `piece de ${nb(Math.min(...minces))} mm : hors du domaine de l EN 1993-1-8 (t >= 4 mm), relever de l EN 1993-1-3`;
+      : `element de ${nb(Math.min(...minces))} mm : hors du domaine de l EN 1993-1-8 (t >= 4 mm), relever de l EN 1993-1-3`;
   },
 };
 

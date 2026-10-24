@@ -6,7 +6,7 @@
  * a ces fonctions, ce qui rend les sorties testables sans navigateur.
  */
 
-import { notationHtml } from 'aedificium-ui';
+import { notationHtml } from './accents';
 import { OUTILS, estVisible, FORMULAIRES, type Outil, type Valeurs } from './form';
 import { dessinsDuCalcul } from './draw';
 import { avertissements, hypotheses } from './hypotheses';

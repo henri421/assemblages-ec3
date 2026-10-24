@@ -7,7 +7,8 @@
  * de calcul : ce qui s'affiche est ce qui s'exporte.
  */
 
-import { notationHtml, tauxAffiche } from 'aedificium-ui';
+import { tauxAffiche } from 'aedificium-ui';
+import { notationHtml } from './accents';
 import type {
   ConstatRegle,
   ResultatCordons,
@@ -36,7 +37,7 @@ const l = (symbole: string, libelle: string, valeur: string): Ligne => ({ symbol
 /** Message d'erreur lisible, quelle que soit la nature de ce qui a ete leve. */
 export function messageDErreur(erreur: unknown): string {
   const detail =
-    erreur instanceof Error && erreur.message !== '' ? erreur.message : 'cause inconnue. Verifiez les valeurs saisies.';
+    erreur instanceof Error && erreur.message !== '' ? erreur.message : 'cause inconnue. Vérifiez les valeurs saisies.';
   return `Calcul impossible : ${detail}`;
 }
 
@@ -131,7 +132,7 @@ export function htmlTaux(taux: readonly Taux[]): string {
     })
     .join('');
   return (
-    '<table class="taux"><thead><tr><th>Mecanisme</th><th>Clause</th><th>Taux</th><th></th></tr></thead>' +
+    '<table class="taux"><thead><tr><th>Mécanisme</th><th>Clause</th><th>Taux</th><th></th></tr></thead>' +
     `<tbody>${lignes}</tbody></table>`
   );
 }
@@ -143,7 +144,7 @@ export function htmlTaux(taux: readonly Taux[]): string {
 function etatRegle(c: ConstatRegle): string {
   if (!c.applicable) return 'sans objet';
   if (c.severite === 'information') return 'information';
-  return c.satisfaite ? 'satisfaite' : c.severite === 'bloquante' ? 'enfreinte' : 'a surveiller';
+  return c.satisfaite ? 'satisfaite' : c.severite === 'bloquante' ? 'enfreinte' : 'à surveiller';
 }
 
 export function htmlDispositions(d: ResultatDispositions): string {
@@ -157,7 +158,7 @@ export function htmlDispositions(d: ResultatDispositions): string {
     )
     .join('');
   return (
-    '<table class="dispositions"><thead><tr><th>Regle</th><th>Clause</th><th>Severite</th><th>Etat</th>' +
+    '<table class="dispositions"><thead><tr><th>Règle</th><th>Clause</th><th>Sévérité</th><th>État</th>' +
     `<th>Constat</th></tr></thead><tbody>${lignes}</tbody></table>`
   );
 }
@@ -224,7 +225,7 @@ export function htmlCordons(c: Calcul): string {
     return htmlCasChaise(s.verifications, s.gouvernant);
   }
   const cordons = c.resultat.cordons;
-  return cordons === null ? '<p class="note">Pleine penetration : aucune gorge a verifier (§4.7.1).</p>' : htmlPointsGroupe(cordons);
+  return cordons === null ? '<p class="note">Pleine pénétration : aucune gorge à vérifier (§4.7.1).</p>' : htmlPointsGroupe(cordons);
 }
 
 /** Titre de la section des organes d'assemblage : cordons ou boulons. */

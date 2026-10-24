@@ -161,13 +161,13 @@ const REGLES: readonly Regle<Geometrie>[] = [
     id: 'pinces-max',
     clause: 'EN 1993-1-8 tableau 3.3',
     severite: 'avertissement',
-    enonce: 'pieces exposees : e_1, e_2 <= 4 t + 40 mm',
+    enonce: 'elements exposes : e_1, e_2 <= 4 t + 40 mm',
     applicabilite: () => null,
     evaluer: ({ d, e_2 }) => {
       const t = Math.min(d.t_p, d.t_b);
       const lim = 4 * t + 40;
       const e = Math.max(d.e_1, e_2.attache, e_2.base);
-      return e <= lim ? null : `pince ${nombreAffiche(e, 1)} mm > 4 t + 40 = ${nombreAffiche(lim, 1)} mm (pieces exposees aux intemperies)`;
+      return e <= lim ? null : `pince ${nombreAffiche(e, 1)} mm > 4 t + 40 = ${nombreAffiche(lim, 1)} mm (elements exposes aux intemperies)`;
     },
   },
   {
