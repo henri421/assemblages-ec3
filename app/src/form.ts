@@ -458,8 +458,11 @@ export function estVisible(groupe: Groupe, champ: Champ, v: Valeurs): boolean {
 export type Lecture = { ok: true; modele: Modele } | { ok: false; message: string; champ: string };
 
 class Refus extends Error {
-  constructor(readonly champ: string, message: string) {
+  readonly champ: string;
+
+  constructor(champ: string, message: string) {
     super(message);
+    this.champ = champ;
   }
 }
 
