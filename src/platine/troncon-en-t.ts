@@ -16,6 +16,7 @@
 
 import type { Assemblage } from '../model/assemblage';
 import type { ProfilEC3 } from '../norms/ec3-recommande';
+import { nombreAffiche } from '../nombres';
 
 export interface ResultatTronconEnT {
   /** Resistance de calcul du beton, f_ck / gamma_c (MPa). */
@@ -201,7 +202,7 @@ export function verifierTronconEnT(
     amesDansLeContour,
     motifAmesExclues: amesDansLeContour
       ? null
-      : `l espace g = ${g.toFixed(1)} mm entre la couronne et l ame depasse c = ${c.toFixed(1)} mm : ` +
+      : `l espace g = ${nombreAffiche(g, 1)} mm entre la couronne et l ame depasse c = ${nombreAffiche(c, 1)} mm : ` +
         'la platine ne justifie pas le report de la charge sur les ames',
     A_eff,
     N_appui: N,

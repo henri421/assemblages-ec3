@@ -7,7 +7,7 @@
  * de calcul : ce qui s'affiche est ce qui s'exporte.
  */
 
-import { notationHtml, tauxFr } from 'aedificium-ui';
+import { notationHtml, tauxAffiche } from 'aedificium-ui';
 import type {
   ConstatRegle,
   ResultatCordons,
@@ -16,7 +16,7 @@ import type {
   VerificationCas,
 } from '../../src/index';
 import type { Calcul } from './calcul';
-import { avecUnite, nombreFr } from './format';
+import { avecUnite, nombreAffiche } from './format';
 
 export interface Ligne {
   symbole: string;
@@ -125,7 +125,7 @@ export function htmlTaux(taux: readonly Taux[]): string {
         `<tr data-taux="${t.id}" class="${depasse ? 'depasse' : ''}">` +
         `<td class="libelle">${notationHtml(t.libelle)}${t.famille === 'service' ? ' <em>(service)</em>' : ''}</td>` +
         `<td class="clause">${notationHtml(t.clause)}</td>` +
-        `<td class="valeur">${tauxFr(t.valeur)}</td>` +
+        `<td class="valeur">${tauxAffiche(t.valeur)}</td>` +
         `<td class="barre"><span class="jauge"><span style="width:${largeur.toFixed(1)}%"></span></span></td></tr>`
       );
     })
@@ -181,10 +181,10 @@ function htmlPointsGroupe(r: ResultatCordons): string {
       const gouv = p === r.gouvernant ? ' class="gouvernant"' : '';
       return (
         `<tr${gouv}><td>${notationHtml(p.cordon)} / ${p.extremite}</td>` +
-        `<td>${nombreFr(d.sigma_perp, 1)}</td><td>${nombreFr(d.tau_perp, 1)}</td><td>${nombreFr(d.tau_para, 1)}</td>` +
-        `<td>${tauxFr(d.tauxEquivalent)}</td>` +
-        `<td>${d.tauxNormal === null ? 'n.a.' : tauxFr(d.tauxNormal)}</td>` +
-        `<td>${tauxFr(p.simplifiee.taux)}</td></tr>`
+        `<td>${nombreAffiche(d.sigma_perp, 1)}</td><td>${nombreAffiche(d.tau_perp, 1)}</td><td>${nombreAffiche(d.tau_para, 1)}</td>` +
+        `<td>${tauxAffiche(d.tauxEquivalent)}</td>` +
+        `<td>${d.tauxNormal === null ? 'n.a.' : tauxAffiche(d.tauxNormal)}</td>` +
+        `<td>${tauxAffiche(p.simplifiee.taux)}</td></tr>`
       );
     })
     .join('');
@@ -198,10 +198,10 @@ function htmlCasChaise(verifs: readonly VerificationCas[], gouvernant: Verificat
       const gouv = v === gouvernant ? ' class="gouvernant"' : '';
       return (
         `<tr${gouv}><td>${notationHtml(v.cas.libelle)}</td>` +
-        `<td>${nombreFr(d.sigma_perp, 1)}</td><td>${nombreFr(d.tau_perp, 1)}</td><td>${nombreFr(d.tau_para, 1)}</td>` +
-        `<td>${tauxFr(d.tauxEquivalent)}</td>` +
-        `<td>${d.tauxNormal === null ? 'n.a.' : tauxFr(d.tauxNormal)}</td>` +
-        `<td>${tauxFr(v.simplifiee.taux)}</td></tr>`
+        `<td>${nombreAffiche(d.sigma_perp, 1)}</td><td>${nombreAffiche(d.tau_perp, 1)}</td><td>${nombreAffiche(d.tau_para, 1)}</td>` +
+        `<td>${tauxAffiche(d.tauxEquivalent)}</td>` +
+        `<td>${d.tauxNormal === null ? 'n.a.' : tauxAffiche(d.tauxNormal)}</td>` +
+        `<td>${tauxAffiche(v.simplifiee.taux)}</td></tr>`
       );
     })
     .join('');
@@ -238,13 +238,13 @@ function htmlBoulons(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): stri
   const lignes = r.pression
     .map(
       (p) =>
-        `<tr><td>${notationHtml(p.position)}</td><td class="valeur">${p.nombre}</td><td class="valeur">${nombreFr(p.alpha_b, 3)}</td>` +
-        `<td class="valeur">${nombreFr(p.k_1, 3)}</td><td class="valeur">${nombreFr(p.F_b_Rd, 1)}</td><td>${notationHtml(p.plat)}</td></tr>`,
+        `<tr><td>${notationHtml(p.position)}</td><td class="valeur">${p.nombre}</td><td class="valeur">${nombreAffiche(p.alpha_b, 3)}</td>` +
+        `<td class="valeur">${nombreAffiche(p.k_1, 3)}</td><td class="valeur">${nombreAffiche(p.F_b_Rd, 1)}</td><td>${notationHtml(p.plat)}</td></tr>`,
     )
     .join('');
   return (
-    `<p class="note">F<sub>v,Rd</sub> = ${nombreFr(r.F_v_Rd, 1)} kN par boulon (${c.modele.donnees.n_s} plan${c.modele.donnees.n_s > 1 ? 's' : ''}), ` +
-    `F<sub>v,Ed</sub> = ${nombreFr(r.F_v_Ed, 1)} kN ; groupe ${nombreFr(r.F_groupe, 1)} kN.</p>` +
+    `<p class="note">F<sub>v,Rd</sub> = ${nombreAffiche(r.F_v_Rd, 1)} kN par boulon (${c.modele.donnees.n_s} plan${c.modele.donnees.n_s > 1 ? 's' : ''}), ` +
+    `F<sub>v,Ed</sub> = ${nombreAffiche(r.F_v_Ed, 1)} kN ; groupe ${nombreAffiche(r.F_groupe, 1)} kN.</p>` +
     '<div class="defilement"><table class="tableau"><thead><tr><th>position</th><th>nombre</th><th>α<sub>b</sub></th><th>k<sub>1</sub></th>' +
     `<th>F<sub>b,Rd</sub> (kN)</th><th>plat</th></tr></thead><tbody>${lignes}</tbody></table></div>`
   );
@@ -272,7 +272,7 @@ const mm = (x: number, d = 1): string => avecUnite(x, d, 'mm');
 const kN = (x: number, d = 1): string => avecUnite(x, d, 'kN');
 const kNm = (x: number, d = 2): string => avecUnite(x, d, 'kN.m');
 const MPa = (x: number, d = 1): string => avecUnite(x, d, 'MPa');
-const sans = (x: number, d = 3): string => nombreFr(x, d);
+const sans = (x: number, d = 3): string => nombreAffiche(x, d);
 
 /** Tous les blocs de grandeurs, dans l'ordre ou on relit le calcul. */
 export function blocsDuCalcul(c: Calcul): Bloc[] {
@@ -389,7 +389,7 @@ function blocsChaise(c: Extract<Calcul, { detail: 'chaise-ancrage' }>): Bloc[] {
     l('M_V,Rd', 'resistance elastique, reduite par rho', kNm(fl.M_V_Rd)),
     l('V_pl,Rd', 'h_w t_w f_y / (racine(3) gamma_M0)', kN(fl.V_pl_Rd)),
     l('sigma_chant', 'chant libre (compression +)', MPa(fl.sigma_chant)),
-    l('h_w / t_w', `limite torsion racine(E / 5,3 f_y) = ${nombreFr(a.torsion.limite, 2)}`, sans(a.torsion.elancement, 2)),
+    l('h_w / t_w', `limite torsion racine(E / 5,3 f_y) = ${nombreAffiche(a.torsion.limite, 2)}`, sans(a.torsion.elancement, 2)),
   ];
   if (a.lierne !== null) {
     const pl = a.lierne.gouvernant;
@@ -562,13 +562,13 @@ function blocsEclissage(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): B
     blocs.push({
       titre: p.nom,
       lignes: [
-        l('b × t', 'dimensions', `${nombreFr(p.b, 0)} × ${nombreFr(p.t, 0)} mm`),
+        l('b × t', 'dimensions', `${nombreAffiche(p.b, 0)} × ${nombreAffiche(p.t, 0)} mm`),
         l('e_2', 'pince transversale', mm(p.e_2)),
-        l('f_y, f_u', 'tableau 3.1 de l EN 1993-1-1', `${nombreFr(p.f_y, 0)} / ${nombreFr(p.f_u, 0)} MPa`),
+        l('f_y, f_u', 'tableau 3.1 de l EN 1993-1-1', `${nombreAffiche(p.f_y, 0)} / ${nombreAffiche(p.f_u, 0)} MPa`),
         l('N_pl,Rd', 'section brute (6.6)', kN(p.N_pl_Rd)),
         l('A_net', 'section nette', avecUnite(p.A_net, 0, 'mm²')),
         l('N_u,Rd', '0,9 A_net f_u / gamma_M2 (6.7)', kN(p.N_u_Rd)),
-        l('A_nt, A_nv', 'cisaillement de bloc, aires nettes', `${nombreFr(p.A_nt, 0)} / ${nombreFr(p.A_nv, 0)} mm²`),
+        l('A_nt, A_nv', 'cisaillement de bloc, aires nettes', `${nombreAffiche(p.A_nt, 0)} / ${nombreAffiche(p.A_nv, 0)} mm²`),
         l('V_eff,1,Rd', 'cisaillement de bloc (3.9)', p.V_eff_Rd === null ? 'sans objet' : kN(p.V_eff_Rd)),
       ],
       note: null,

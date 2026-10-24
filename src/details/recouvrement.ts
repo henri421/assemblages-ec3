@@ -19,6 +19,7 @@ import type { Materiau } from '../model/materiau';
 import { limiteElastique, resistanceUltime } from '../norms/acier';
 import { betaW } from '../norms/beta-w';
 import { ec3Recommande, validerProfil, type ProfilEC3 } from '../norms/ec3-recommande';
+import { nombreAffiche } from '../nombres';
 import type { CordonGroupe } from '../soudures/groupe';
 import {
   conclure,
@@ -100,7 +101,7 @@ const REGLES_RECOUVREMENT: readonly Regle<ContexteRecouvrement>[] = [
       donnees.cordons.lateraux && donnees.L_r > 150 * donnees.a ? null : 'assemblage court',
     evaluer: ({ donnees }) =>
       `L_j = ${donnees.L_r} mm > 150 a = ${150 * donnees.a} mm : beta_Lw = ` +
-      `${reductionAssemblageLong(donnees.L_r, donnees.a).toFixed(3)} sur les cordons lateraux`,
+      `${nombreAffiche(reductionAssemblageLong(donnees.L_r, donnees.a), 3)} sur les cordons lateraux`,
   },
   {
     id: 'excentricite-recouvrement',

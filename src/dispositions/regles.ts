@@ -13,6 +13,7 @@
 import type { Assemblage } from '../model/assemblage';
 import type { Materiau, QualiteZ } from '../model/materiau';
 import { epsilon, limiteElastique } from '../norms/acier';
+import { nombreAffiche } from '../nombres';
 
 export type Severite = 'bloquante' | 'avertissement' | 'information';
 
@@ -65,7 +66,7 @@ export interface ContexteCordons {
   epaisseurs: number[];
 }
 
-const nb = (x: number): string => String(Number(x.toFixed(1)));
+const nb = (x: number): string => nombreAffiche(x, 1);
 
 function angles(ctx: ContexteCordons): CordonDecrit[] {
   return ctx.cordons.filter((c) => c.type === 'angle');

@@ -2,10 +2,11 @@
  * Mise en forme des nombres et du texte. Module PUR.
  */
 
-export { echapper, lireNombre, nombreFr } from 'aedificium-ui';
-import { nombreFr } from 'aedificium-ui';
+export { echapper, lireNombre, nombreAffiche, nombreFr, tauxAffiche } from 'aedificium-ui';
+import { nombreAffiche } from 'aedificium-ui';
 
-/** Nombre avec unite, espace insecable. */
+/** Nombre avec unite, trois decimales au plus et sans zeros inutiles. */
 export function avecUnite(valeur: number, decimales: number, unite: string): string {
-  return unite === '' ? nombreFr(valeur, decimales) : `${nombreFr(valeur, decimales)} ${unite}`;
+  const texte = nombreAffiche(valeur, Math.min(decimales, 3));
+  return unite === '' ? texte : `${texte} ${unite}`;
 }

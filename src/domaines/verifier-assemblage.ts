@@ -38,7 +38,8 @@ import { fluxDansLesCordons } from '../soudures/flux';
 import { gorgePleineResistance } from '../soudures/pleine-resistance';
 import { verifierSoudures, type ResultatSoudures } from '../soudures/verifier-soudures';
 import { effortDimensionnant, type EffortDimensionnant, type OrigineEffort } from './effort-dimensionnant';
-import { formaterTaux, gouvernant, sansObjet, taux, trierTaux, type Taux } from './taux-de-travail';
+import { gouvernant, sansObjet, taux, trierTaux, type Taux } from './taux-de-travail';
+import { nombreAffiche, tauxAffiche } from '../nombres';
 
 export type Verdict =
   | 'conforme'
@@ -233,7 +234,7 @@ export function verifierAssemblage(d: DonneesAssemblage): ResultatAssemblage {
         max === null
           ? 'aucun mecanisme de resistance applicable'
           : `${resistanceOk ? 'resistance suffisante' : 'resistance insuffisante'} : mecanisme le plus sollicite ` +
-            `« ${max.libelle} » (${max.clause}), taux ${formaterTaux(max.valeur)}`,
+            `« ${max.libelle} » (${max.clause}), taux ${tauxAffiche(max.valeur)}`,
     },
     service:
       service === null
@@ -244,9 +245,9 @@ export function verifierAssemblage(d: DonneesAssemblage): ResultatAssemblage {
               ? 'la platine reste elastique au blocage' +
                 (service.tauxDeformation === null ? '' : ' et sa fleche sous la limite fixee')
               : service.tauxElastique > 1
-                ? `la platine plastifie au blocage (taux elastique ${formaterTaux(service.tauxElastique)}) : ` +
+                ? `la platine plastifie au blocage (taux elastique ${tauxAffiche(service.tauxElastique)}) : ` +
                   'sa deformation n est pas negligeable au sens du TA 2020'
-                : `fleche au blocage ${service.delta.toFixed(3)} mm au-dela de la limite fixee`,
+                : `fleche au blocage ${nombreAffiche(service.delta, 3)} mm au-dela de la limite fixee`,
           },
     dispositions: {
       ok: dispositions.ok,

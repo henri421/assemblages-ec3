@@ -26,6 +26,7 @@ import type { Materiau } from '../model/materiau';
 import { limiteElastique, resistanceUltime } from '../norms/acier';
 import { airesBoulon, alphaV, diametreTrou, resistancesBoulon, type ClasseBoulon, type DiametreBoulon } from '../norms/boulons';
 import { ec3Recommande, validerProfil, type ProfilEC3 } from '../norms/ec3-recommande';
+import { nombreAffiche } from '../nombres';
 import { conclure, fini, positif, type Constats, type VerdictDetail } from './commun';
 
 const N_PAR_KN = 1000;
@@ -127,7 +128,7 @@ const REGLES: readonly Regle<Geometrie>[] = [
     severite: 'bloquante',
     enonce: 'e_1 >= 1,2 d_0',
     applicabilite: () => null,
-    evaluer: ({ d, d_0 }) => (d.e_1 >= 1.2 * d_0 ? null : `e_1 = ${d.e_1} mm < 1,2 d_0 = ${(1.2 * d_0).toFixed(1)} mm`),
+    evaluer: ({ d, d_0 }) => (d.e_1 >= 1.2 * d_0 ? null : `e_1 = ${d.e_1} mm < 1,2 d_0 = ${nombreAffiche(1.2 * d_0, 1)} mm`),
   },
   {
     id: 'e2-min',
@@ -137,7 +138,7 @@ const REGLES: readonly Regle<Geometrie>[] = [
     applicabilite: () => null,
     evaluer: ({ e_2, d_0 }) => {
       const m = Math.min(e_2.attache, e_2.base);
-      return m >= 1.2 * d_0 ? null : `e_2 = ${m.toFixed(1)} mm < 1,2 d_0 = ${(1.2 * d_0).toFixed(1)} mm`;
+      return m >= 1.2 * d_0 ? null : `e_2 = ${nombreAffiche(m, 1)} mm < 1,2 d_0 = ${nombreAffiche(1.2 * d_0, 1)} mm`;
     },
   },
   {
@@ -146,7 +147,7 @@ const REGLES: readonly Regle<Geometrie>[] = [
     severite: 'bloquante',
     enonce: 'p_1 >= 2,2 d_0',
     applicabilite: ({ d }) => (d.n_1 > 1 ? null : 'une seule rangee'),
-    evaluer: ({ d, d_0 }) => (d.p_1 >= 2.2 * d_0 ? null : `p_1 = ${d.p_1} mm < 2,2 d_0 = ${(2.2 * d_0).toFixed(1)} mm`),
+    evaluer: ({ d, d_0 }) => (d.p_1 >= 2.2 * d_0 ? null : `p_1 = ${d.p_1} mm < 2,2 d_0 = ${nombreAffiche(2.2 * d_0, 1)} mm`),
   },
   {
     id: 'p2-min',
@@ -154,7 +155,7 @@ const REGLES: readonly Regle<Geometrie>[] = [
     severite: 'bloquante',
     enonce: 'p_2 >= 2,4 d_0',
     applicabilite: ({ d }) => (d.n_2 > 1 ? null : 'une seule file'),
-    evaluer: ({ d, d_0 }) => (d.p_2 >= 2.4 * d_0 ? null : `p_2 = ${d.p_2} mm < 2,4 d_0 = ${(2.4 * d_0).toFixed(1)} mm`),
+    evaluer: ({ d, d_0 }) => (d.p_2 >= 2.4 * d_0 ? null : `p_2 = ${d.p_2} mm < 2,4 d_0 = ${nombreAffiche(2.4 * d_0, 1)} mm`),
   },
   {
     id: 'pinces-max',
@@ -166,7 +167,7 @@ const REGLES: readonly Regle<Geometrie>[] = [
       const t = Math.min(d.t_p, d.t_b);
       const lim = 4 * t + 40;
       const e = Math.max(d.e_1, e_2.attache, e_2.base);
-      return e <= lim ? null : `pince ${e.toFixed(1)} mm > 4 t + 40 = ${lim} mm (pieces exposees aux intemperies)`;
+      return e <= lim ? null : `pince ${nombreAffiche(e, 1)} mm > 4 t + 40 = ${nombreAffiche(lim, 1)} mm (pieces exposees aux intemperies)`;
     },
   },
   {
