@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { calculer } from '../../app/src/calcul';
 import { CLASSES_DE_DESSIN, dessinsDuCalcul } from '../../app/src/draw';
-import { STYLES_TRACE, noteDeCalculHtml, resultatsEnCsv, svgAutonome } from '../../app/src/export';
+import { STYLES_TRACE, resultatsEnCsv, svgAutonome } from '../../app/src/export';
 import { OUTILS, lireSaisie, valeursParDefaut } from '../../app/src/form';
 import { blocsDuCalcul } from '../../app/src/view';
 
@@ -59,18 +59,7 @@ describe('resultatsEnCsv', () => {
   });
 });
 
-describe('noteDeCalculHtml', () => {
-  it('porte l avertissement de deuxieme generation et les hypotheses', () => {
-    const html = noteDeCalculHtml({
-      titre: 'x', date: '2026-09-30', entrees: [], dessins: [], verdict: 'Conforme', motif: 'm',
-      tableaux: [], resultats: [], avertissements: ['attention'], hypotheses: ['h1'],
-    });
-    expect(html).toMatch(/2027/);
-    expect(html).toMatch(/constate, il ne prescrit pas/);
-    expect(html).toMatch(/h1/);
-    expect(html).toMatch(/class="avertissement">attention/);
-  });
-});
+// La note de calcul est composee par aedificium-ui a partir de `noteDuCalcul` : voir `note.test.ts`.
 
 describe('jetons communs', () => {
   it('le :root de style.css porte les memes valeurs que JETONS d aedificium-ui', async () => {

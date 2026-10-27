@@ -251,6 +251,76 @@ function htmlBoulons(c: Extract<Calcul, { detail: 'eclissage-boulonne' }>): stri
   );
 }
 
+/** Tableau des organes pour la note commune : memes valeurs que l ecran, en texte source. */
+export function tableauOrganes(c: Calcul): { titre: string; entetes: string[]; lignes: string[][] } | null {
+  const titre = titreOrganes(c);
+  if (c.detail === 'eclissage-boulonne') {
+    return {
+      titre,
+      entetes: ['position', 'nombre', 'α_b', 'k_1', 'F_b,Rd (kN)', 'plat'],
+      lignes: c.resultat.pression.map((p) => [
+        p.position,
+        String(p.nombre),
+        nombreAffiche(p.alpha_b, 3),
+        nombreAffiche(p.k_1, 3),
+        nombreAffiche(p.F_b_Rd, 1),
+        p.plat,
+      ]),
+    };
+  }
+  // Memes symboles que les blocs de grandeurs, pour une notation unique.
+  const entetes = ['Cordon', 'sigma_perp', 'tau_perp', 'tau_para', 'critère 1', '0,9 f_u', 'simplifiée'];
+  const valeurs = (d: VerificationCas['directionnelle'], simplifiee: number): string[] => [
+    nombreAffiche(d.sigma_perp, 1),
+    nombreAffiche(d.tau_perp, 1),
+    nombreAffiche(d.tau_para, 1),
+    tauxAffiche(d.tauxEquivalent),
+    d.tauxNormal === null ? 'n.a.' : tauxAffiche(d.tauxNormal),
+    tauxAffiche(simplifiee),
+  ];
+  const marque = (nom: string, gouvernant: boolean): string => (gouvernant ? `${nom} (gouvernant)` : nom);
+  if (c.detail === 'chaise-ancrage') {
+    const s = c.resultat.soudures;
+    return {
+      titre,
+      entetes,
+      lignes: s.verifications.map((v) => [marque(v.cas.libelle, v === s.gouvernant), ...valeurs(v.directionnelle, v.simplifiee.taux)]),
+    };
+  }
+  const r = c.resultat.cordons;
+  if (r === null) return null;
+  return {
+    titre,
+    entetes,
+    lignes: r.points.map((p) => [marque(`${p.cordon} / ${p.extremite}`, p === r.gouvernant), ...valeurs(p.directionnelle, p.simplifiee.taux)]),
+  };
+}
+
+/** Precision des organes : pleine penetration ou resistance des boulons. */
+export function texteOrganes(c: Calcul): string | null {
+  if (c.detail === 'eclissage-boulonne') {
+    const r = c.resultat;
+    const n = c.modele.donnees.n_s;
+    return (
+      `F_v,Rd = ${nombreAffiche(r.F_v_Rd, 1)} kN par boulon (${n} plan${n > 1 ? 's' : ''}), ` +
+      `F_v,Ed = ${nombreAffiche(r.F_v_Ed, 1)} kN ; groupe ${nombreAffiche(r.F_groupe, 1)} kN.`
+    );
+  }
+  if (c.detail !== 'chaise-ancrage' && c.resultat.cordons === null) {
+    return 'Pleine pénétration : aucune gorge à vérifier (§4.7.1).';
+  }
+  return null;
+}
+
+/** Tableau des dispositions pour la note commune. */
+export function tableauDispositions(d: ResultatDispositions): { titre: string; entetes: string[]; lignes: string[][] } {
+  return {
+    titre: 'Dispositions constructives',
+    entetes: ['Règle', 'Clause', 'Sévérité', 'État', 'Constat'],
+    lignes: d.constats.map((c) => [c.enonce, c.clause, c.severite, etatRegle(c), c.motif ?? c.notApplicableReason ?? '']),
+  };
+}
+
 /**
  * Note sur les methodes. En cisaillement longitudinal pur, les deux methodes
  * COINCIDENT : on le dit, plutot que de montrer deux fois le meme nombre

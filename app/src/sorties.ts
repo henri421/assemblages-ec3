@@ -6,20 +6,17 @@
  * a ces fonctions, ce qui rend les sorties testables sans navigateur.
  */
 
-import { notationHtml } from './accents';
+import type { ElementNote, NoteDeCalcul, VerificationNote } from 'aedificium-ui';
+import { accentue } from './accents';
 import { OUTILS, estVisible, FORMULAIRES, type Outil, type Valeurs } from './form';
 import { dessinsDuCalcul } from './draw';
 import { avertissements, hypotheses } from './hypotheses';
-import type { NoteDeCalcul } from './export';
 import {
   blocsDuCalcul,
-  htmlConstats,
-  htmlCordons,
-  htmlDispositions,
-  htmlTaux,
   noteMethodes,
-  titreDuVerdict,
-  titreOrganes,
+  tableauDispositions,
+  tableauOrganes,
+  texteOrganes,
   type Bloc,
 } from './view';
 import type { Calcul } from './calcul';
@@ -71,29 +68,95 @@ export function blocsDEntree(outil: Outil, v: Valeurs): Bloc[] {
     .filter((b) => b.lignes.length > 0);
 }
 
-/**
- * Le contenu de la note de calcul, sans le rendu HTML. Les meme elements, dans
- * le meme ordre, que `rendreResultat` a l'ecran : constats, taux, cordons ou
- * boulons et dispositions.
- */
-export function noteDuCalcul(outil: Outil, v: Valeurs, c: Calcul, date: string): NoteDeCalcul {
-  const nom = OUTILS.find((o) => o.id === outil)?.nom ?? outil;
+/** Section de la note ou range un groupe de saisie, d apres son titre. */
+function sectionDuGroupe(titre: string): 'geometrie' | 'materiaux' | 'hypotheses' | 'charges' {
+  if (/^(Matériau|Soudage)/.test(titre)) return 'materiaux';
+  if (titre === 'Coefficients') return 'hypotheses';
+  if (/^(Actions|Sollicitation)/.test(titre)) return 'charges';
+  return 'geometrie';
+}
+
+/** Un bloc de l application en bloc de la note, textes accentues. */
+function enBloc(b: Bloc): ElementNote {
   return {
-    titre: nom,
-    date,
-    entrees: blocsDEntree(outil, v),
-    dessins: dessinsDuCalcul(c),
-    verdict: titreDuVerdict(c.resultat.verdict),
-    motif: c.resultat.motif,
-    tableaux: [
-      { titre: 'Constats', html: htmlConstats(c) },
-      { titre: 'Taux de travail', html: htmlTaux(c.resultat.taux) },
-      { titre: titreOrganes(c), html: `${htmlCordons(c)}<p class="note">${notationHtml(noteMethodes(c))}</p>` },
-      { titre: 'Dispositions constructives', html: htmlDispositions(c.resultat.dispositions) },
-    ],
-    resultats: blocsDuCalcul(c),
-    avertissements: avertissements(c),
-    hypotheses: hypotheses(outil),
-    pied: '',
+    type: 'bloc',
+    bloc: {
+      titre: accentue(b.titre),
+      lignes: b.lignes.map((l) => ({ symbole: accentue(l.symbole), libelle: accentue(l.libelle), valeur: accentue(l.valeur) })),
+      note: b.note === null ? null : accentue(b.note),
+    },
+  };
+}
+
+/** Un tableau en element de la note, cellules accentuees. */
+function enTableau(t: { titre: string; entetes: string[]; lignes: string[][] }): ElementNote {
+  return { type: 'tableau', titre: t.titre, entetes: t.entetes, lignes: t.lignes.map((l) => l.map(accentue)) };
+}
+
+/**
+ * La note de calcul, rangee dans les sections de la note commune
+ * d aedificium-ui. Aucun verdict global : les conclusions sont le tableau des
+ * taux, que la note commune construit depuis `verifications`.
+ */
+export function noteDuCalcul(
+  outil: Outil,
+  v: Valeurs,
+  c: Calcul,
+  cartouche: { projet: string; element: string; date: string },
+): NoteDeCalcul {
+  const nom = OUTILS.find((o) => o.id === outil)?.nom ?? outil;
+  const s = {
+    geometrie: [] as ElementNote[],
+    materiaux: [] as ElementNote[],
+    hypotheses: [{ type: 'liste', items: hypotheses(outil).map(accentue) }] as ElementNote[],
+    charges: [] as ElementNote[],
+    calculs: blocsDuCalcul(c).map(enBloc),
+  };
+  for (const b of blocsDEntree(outil, v)) s[sectionDuGroupe(b.titre)].push(enBloc(b));
+  for (const d of dessinsDuCalcul(c)) s.geometrie.push({ type: 'figure', svg: d.svg, legende: `${d.titre} : ${accentue(d.legende)}` });
+
+  const organes = tableauOrganes(c);
+  if (organes !== null) s.calculs.push(enTableau(organes));
+  const precision = texteOrganes(c);
+  if (precision !== null) s.calculs.push({ type: 'texte', texte: precision });
+  s.calculs.push({ type: 'texte', texte: accentue(noteMethodes(c)) });
+
+  // Un mecanisme sans objet n est pas une verification : il reste visible ici, avec son motif.
+  const sansObjet = c.resultat.taux.filter((t) => !t.applicable);
+  if (sansObjet.length > 0) {
+    s.calculs.push({
+      type: 'liste',
+      items: sansObjet.map((t) => `${accentue(t.libelle)} (${t.clause}) : sans objet, ${accentue(t.notApplicableReason ?? '')}`),
+    });
+  }
+  s.calculs.push(enTableau(tableauDispositions(c.resultat.dispositions)));
+
+  const verifications: VerificationNote[] = [
+    ...c.resultat.taux
+      .filter((t) => t.applicable)
+      .map((t) => ({
+        nom: accentue(t.libelle) + (t.famille === 'service' ? ' (service)' : ''),
+        clause: accentue(t.clause),
+        taux: t.valeur,
+        ok: t.valeur <= 1,
+      })),
+    // Les regles bloquantes jugent sans ratio ; les autres restent au tableau des dispositions.
+    ...c.resultat.dispositions.constats
+      .filter((r) => r.applicable && r.severite === 'bloquante')
+      .map((r) => ({ nom: accentue(r.enonce), clause: accentue(r.clause), taux: null, ok: r.satisfaite })),
+  ];
+
+  const element = cartouche.element.trim();
+  return {
+    cartouche: {
+      projet: cartouche.projet,
+      element: element === '' ? nom : element,
+      date: cartouche.date,
+      norme: 'EN 1993-1-8:2005',
+      outil: 'assemblages-ec3',
+    },
+    sections: s,
+    verifications,
+    avertissements: avertissements(c).map(accentue),
   };
 }

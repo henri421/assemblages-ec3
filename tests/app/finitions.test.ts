@@ -8,13 +8,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { NOMS_GRECS, blocsEnTexte, constatsAffichage, contenuBalise, notationHtml, texteVisible } from 'aedificium-ui';
+import { NOMS_GRECS, blocsEnTexte, constatsAffichage, contenuBalise, notationHtml, noteDeCalculHtml, texteVisible } from 'aedificium-ui';
 import { FORMULAIRES, OUTILS, lireSaisie, valeursParDefaut } from '../../app/src/form';
 import { assistance, calculer } from '../../app/src/calcul';
 import { blocsDuCalcul, htmlAssistance, rendreResultat } from '../../app/src/view';
 import { dessinsDuCalcul } from '../../app/src/draw';
 import { avertissements, hypotheses } from '../../app/src/hypotheses';
-import { noteDeCalculHtml, resultatsEnCsv } from '../../app/src/export';
+import { STYLES_TRACE, resultatsEnCsv } from '../../app/src/export';
 import { blocsDEntree, noteDuCalcul } from '../../app/src/sorties';
 
 const TITRE = 'Assemblages en acier';
@@ -42,7 +42,7 @@ function sorties() {
       ...dessinsDuCalcul(c).flatMap((d) => [d.titre, d.svg, d.legende]),
       ...avertissements(c).map((a) => notationHtml(a))
     );
-    notes.push(noteDeCalculHtml(noteDuCalcul(o.id, v, c, '2026-10-24')));
+    notes.push(noteDeCalculHtml(noteDuCalcul(o.id, v, c, { projet: 'Projet', element: '', date: '2026-10-24' }), STYLES_TRACE));
     csv.push(resultatsEnCsv(blocsEnTexte([...blocsDEntree(o.id, v), ...blocsDuCalcul(c)])));
   }
   return { formulaire, ecran, notes, csv };
