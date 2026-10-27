@@ -8,12 +8,12 @@
  * affiche quand le calcul echoue.
  */
 
-import { blocsEnTexte } from 'aedificium-ui';
+import { blocsEnTexte, noteDeCalculHtml } from 'aedificium-ui';
 import { notationHtml, notationTexte } from './accents';
 import { lireModele, serialiser, type Modele } from '../../src/index';
 import { assistance, calculer, type Calcul } from './calcul';
 import { dessinsDuCalcul } from './draw';
-import { noteDeCalculHtml, resultatsEnCsv, svgAutonome } from './export';
+import { STYLES_TRACE, resultatsEnCsv, svgAutonome } from './export';
 import {
   FORMULAIRES,
   OUTILS,
@@ -46,6 +46,9 @@ const corpsResultat = exige<HTMLElement>('[data-role="resultat-corps"]');
 const banniereErreur = exige<HTMLElement>('[data-role="erreur"]');
 const limites = exige<HTMLElement>('[data-role="limites"]');
 const entreeFichier = exige<HTMLInputElement>('[data-role="fichier"]');
+const champProjet = exige<HTMLInputElement>('[data-role="projet"]');
+const champElement = exige<HTMLInputElement>('[data-role="element"]');
+const voletSorties = exige<HTMLElement>('#sorties');
 
 /** Valeurs saisies, par outil : changer de detail ne perd pas la saisie. */
 const saisies = new Map<Outil, Valeurs>();
@@ -181,6 +184,45 @@ function changerOutil(nouveau: Outil): void {
   rafraichir();
 }
 
+// --- Cartouche ---------------------------------------------------------------
+// Le projet et l'element nomment la note. Ces champs vivent hors du formulaire
+// de saisie : les remplir ne relance pas le calcul. Ils sont retenus d'une
+// visite a l'autre et ne bloquent jamais l'application si le stockage refuse.
+
+const CLE_CARTOUCHE = 'assemblages-ec3:cartouche';
+
+function lireCartouche(): { projet: string; element: string } {
+  try {
+    const brut = localStorage.getItem(CLE_CARTOUCHE);
+    if (brut === null) return { projet: '', element: '' };
+    const lu: unknown = JSON.parse(brut);
+    if (typeof lu !== 'object' || lu === null) return { projet: '', element: '' };
+    const o = lu as Record<string, unknown>;
+    return {
+      projet: typeof o.projet === 'string' ? o.projet : '',
+      element: typeof o.element === 'string' ? o.element : '',
+    };
+  } catch {
+    return { projet: '', element: '' };
+  }
+}
+
+function memoriserCartouche(): void {
+  try {
+    localStorage.setItem(
+      CLE_CARTOUCHE,
+      JSON.stringify({ projet: champProjet.value, element: champElement.value }),
+    );
+  } catch {
+    // Stockage indisponible : le cartouche reste dans la page.
+  }
+}
+
+const cartouche = lireCartouche();
+champProjet.value = cartouche.projet;
+champElement.value = cartouche.element;
+voletSorties.addEventListener('input', memoriserCartouche);
+
 // --- Sorties ---------------------------------------------------------------
 
 function baseDeNom(c: Calcul): string {
@@ -192,7 +234,14 @@ function sansCalcul(): void {
 }
 
 function exporterNote(c: Calcul): void {
-  const html = noteDeCalculHtml(noteDuCalcul(outil, valeurs(), c, new Date().toISOString().slice(0, 10)));
+  const html = noteDeCalculHtml(
+    noteDuCalcul(outil, valeurs(), c, {
+      projet: champProjet.value,
+      element: champElement.value,
+      date: new Date().toISOString().slice(0, 10),
+    }),
+    STYLES_TRACE,
+  );
   ouvrirOuTelecharger(`${baseDeNom(c)}-note.html`, html);
 }
 
