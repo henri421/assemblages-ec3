@@ -41,7 +41,10 @@ svg { background: var(--surface); color-scheme: light; font-family: var(--sans);
 .dessin .contour-c { fill: var(--accent-doux); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 7 5; }
 .dessin .axe { fill: none; stroke: var(--neutre); stroke-width: 1; stroke-dasharray: 10 3 2 3; }
 .dessin .appui { fill: none; stroke: var(--texte); stroke-width: 3; }
-.dessin .charge { fill: var(--texte); stroke: var(--texte); stroke-width: 2; }`;
+.dessin .charge { fill: var(--texte); stroke: var(--texte); stroke-width: 2; }
+.dessin .cote { fill: none; stroke: var(--texte); stroke-width: 0.8; }
+.dessin .repere { fill: var(--texte); stroke: var(--texte); stroke-width: 0.8; }
+.dessin .texte { fill: var(--texte); stroke: none; }`;
 
 /** Enveloppe un dessin de la page dans un SVG autonome, styles de trace inlines. */
 export function svgAutonome(svg: string, styles: string = STYLES_TRACE): string {

@@ -352,6 +352,9 @@ figcaption {
 .dessin .axe { fill: none; stroke: var(--neutre); stroke-width: 1; stroke-dasharray: 10 3 2 3; }
 .dessin .appui { fill: none; stroke: var(--texte); stroke-width: 3; }
 .dessin .charge { fill: var(--texte); stroke: var(--texte); stroke-width: 2; }
+.dessin .cote { fill: none; stroke: var(--texte); stroke-width: 0.8; }
+.dessin .repere { fill: var(--texte); stroke: var(--texte); stroke-width: 0.8; }
+.dessin .texte { fill: var(--texte); stroke: none; }
 
 /* --- Constats, taux, dispositions ------------------------------------------ */
 

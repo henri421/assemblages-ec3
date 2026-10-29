@@ -2,14 +2,16 @@
  * Dessins a l'echelle, en SVG. Module PUR : il rend des chaines.
  *
  * Toutes les longueurs sont en millimetres du modele ; le `viewBox` fait
- * l'echelle. Aucun texte n'est place dans les dessins : a l'echelle du
- * modele, une police n'aurait pas de taille lisible. Les legendes vivent
- * dans la page.
+ * l'echelle. Les dessins de la tete d'ancrage portent des cotes et des
+ * etiquettes, a une taille de police proportionnelle a la taille du dessin ;
+ * les autres n'ont pas de texte, et leurs legendes vivent dans la page.
  *
  * ⚠ Toute classe emise ici doit avoir sa regle dans `STYLES_TRACE`
  * (export.ts), faute de quoi les dessins exportes sortent en aplat noir. Un
  * test le verifie.
  */
+
+import { nombreAffiche } from 'aedificium-ui';
 
 import type { Calcul } from './calcul';
 
@@ -29,6 +31,9 @@ export const CLASSES_DE_DESSIN = [
   'axe',
   'appui',
   'charge',
+  'cote',
+  'repere',
+  'texte',
 ] as const;
 
 type Classe = (typeof CLASSES_DE_DESSIN)[number];
@@ -92,6 +97,98 @@ function svg(boite: Boite, contenu: string[], label: string, defs = ''): string 
 }
 
 // ---------------------------------------------------------------------------
+// Cotes et etiquettes (tete d'ancrage)
+// ---------------------------------------------------------------------------
+
+/** Nombre d'une cote ou d'une etiquette. */
+function n(v: number): string {
+  return nombreAffiche(v, 1);
+}
+
+/** Texte de dessin ; `fs` est la taille de police, en mm du modele. */
+function texte(x: number, y: number, contenu: string, fs: number, ancre: 'start' | 'middle' | 'end' = 'start'): string {
+  return (
+    `<text class="texte" x="${co(x)}" y="${co(y)}" font-size="${co(fs)}" ` +
+    `text-anchor="${ancre}" dominant-baseline="middle">${contenu}</text>`
+  );
+}
+
+/** Symbole indice suivi de `suite` : `t` indice `w`, puis ` = 20`. */
+function indice(lettre: string, ind: string, suite: string, fs: number): string {
+  const d = co(0.3 * fs);
+  return `${lettre}<tspan dy="${d}" font-size="${co(0.75 * fs)}">${ind}</tspan><tspan dy="-${d}">${suite}</tspan>`;
+}
+
+/** Largeur approchee d'un texte, pour reserver sa place dans le cadre. */
+function largeurTexte(contenu: string, fs: number): number {
+  return 0.56 * fs * contenu.replace(/<[^>]+>/g, '').length;
+}
+
+/** Trait oblique d'extremite de cote. */
+function tiret(x: number, y: number, fs: number): string {
+  const k = 0.3 * fs;
+  return ligne('cote', x - k, y + k, x + k, y - k);
+}
+
+/**
+ * Cote horizontale de x1 a x2, tracee a l'ordonnee y ; les lignes d'attache
+ * partent de l'objet (yRef1 sous x1, yRef2 sous x2). Le texte se place du cote
+ * oppose a l'objet.
+ */
+function coteH(x1: number, x2: number, y: number, yRef1: number, yRef2: number, contenu: string, fs: number): string {
+  const s = Math.sign(y - yRef1) || -1;
+  return (
+    ligne('cote', x1, yRef1 + s * 0.25 * fs, x1, y + s * 0.35 * fs) +
+    ligne('cote', x2, yRef2 + s * 0.25 * fs, x2, y + s * 0.35 * fs) +
+    ligne('cote', x1, y, x2, y) +
+    tiret(x1, y, fs) +
+    tiret(x2, y, fs) +
+    texte((x1 + x2) / 2, y + s * 0.8 * fs, contenu, fs, 'middle')
+  );
+}
+
+/** Cote verticale de y1 a y2 a l'abscisse x ; texte horizontal, a l'exterieur. */
+function coteV(y1: number, y2: number, x: number, xRef1: number, xRef2: number, contenu: string, fs: number): string {
+  const s = Math.sign(x - xRef1) || -1;
+  return (
+    ligne('cote', xRef1 + s * 0.25 * fs, y1, x + s * 0.35 * fs, y1) +
+    ligne('cote', xRef2 + s * 0.25 * fs, y2, x + s * 0.35 * fs, y2) +
+    ligne('cote', x, y1, x, y2) +
+    tiret(x, y1, fs) +
+    tiret(x, y2, fs) +
+    texte(x + s * 0.5 * fs, (y1 + y2) / 2, contenu, fs, s < 0 ? 'end' : 'start')
+  );
+}
+
+interface Etiquette {
+  /** Point designe, dans le dessin. */
+  x: number;
+  y: number;
+  contenu: string;
+}
+
+/**
+ * Etiquettes en colonne a partir de `xCol`, reliees a leur point par un trait
+ * de rappel. Rangees par ordonnee, espacees d'au moins 1,5 fs.
+ */
+function etiquettes(liste: Etiquette[], xCol: number, fs: number): { svg: string; x1: number; y0: number; y1: number } {
+  const triees = [...liste].sort((p, q) => p.y - q.y);
+  let svgEtiq = '';
+  let precedente = -Infinity;
+  let x1 = xCol;
+  let y0 = Infinity;
+  for (const e of triees) {
+    const y = Math.max(e.y, precedente + 1.5 * fs);
+    precedente = y;
+    y0 = Math.min(y0, y);
+    svgEtiq +=
+      cercle('repere', e.x, e.y, 0.15 * fs) + ligne('repere', e.x, e.y, xCol - 0.3 * fs, y) + texte(xCol, y, e.contenu, fs);
+    x1 = Math.max(x1, xCol + largeurTexte(e.contenu, fs));
+  }
+  return { svg: svgEtiq, x1, y0: y0 - fs, y1: precedente + fs };
+}
+
+// ---------------------------------------------------------------------------
 // Tete d'ancrage
 // ---------------------------------------------------------------------------
 
@@ -137,11 +234,48 @@ export function planChaise(c: Extract<Calcul, { detail: 'chaise-ancrage' }>): st
   contenu.push(cercle('couronne', ex, 0, ancrage.D / 2));
   contenu.push(cercle('percage', ex, 0, platine.d_0 / 2));
   contenu.push(ligne('axe', ex, -h / 2, ex, h / 2));
-  if (schema === 'appui-extremites' && plats.L !== undefined) {
-    for (const s of [-1, 1]) contenu.push(ligne('appui', -b / 2, (s * plats.L) / 2, b / 2, (s * plats.L) / 2));
+  const extremites = schema === 'appui-extremites' && plats.L !== undefined;
+  if (extremites) {
+    for (const s of [-1, 1]) contenu.push(ligne('appui', -b / 2, (s * (plats.L ?? 0)) / 2, b / 2, (s * (plats.L ?? 0)) / 2));
   }
-  const demi = Math.max(h / 2, schema === 'appui-extremites' ? (plats.L ?? 0) / 2 : 0);
-  return svg({ x0: -b / 2, y0: -demi, x1: b / 2, y1: demi }, contenu, "Vue en plan de la tête d'ancrage", defs);
+  const demi = Math.max(h / 2, plats.L_w / 2, extremites ? (plats.L ?? 0) / 2 : 0);
+  const fs = 0.045 * Math.max(b, 2 * demi);
+
+  // Cotes : b dessous, h a gauche, e (entre axes des ames) dessus.
+  const yB = demi + 2 * fs;
+  contenu.push(coteH(-b / 2, b / 2, yB, h / 2, h / 2, `b = ${n(b)}`, fs));
+  const xH = -b / 2 - 2 * fs;
+  const texteH = `h = ${n(h)}`;
+  contenu.push(coteV(-h / 2, h / 2, xH, -b / 2, -b / 2, texteH, fs));
+  const yE = -demi - 2 * fs;
+  contenu.push(coteH(-plats.e / 2, plats.e / 2, yE, -plats.L_w / 2, -plats.L_w / 2, `e = ${n(plats.e)}`, fs));
+
+  // Etiquettes, en colonne a droite de la platine.
+  const bordAme = plats.e / 2 + plats.t_w / 2;
+  const liste: Etiquette[] = [
+    { x: bordAme < 0.48 * b ? (b / 2 + bordAme) / 2 : 0.48 * b, y: -0.42 * h, contenu: `Platine, t = ${n(platine.t)}` },
+    { x: plats.e / 2, y: -0.3 * plats.L_w, contenu: `Âme, ${indice('t', 'w', ` = ${n(plats.t_w)}`, fs)}` },
+    { x: ex + 0.3536 * ancrage.D, y: -0.3536 * ancrage.D, contenu: `Couronne d'appui, Ø D = ${n(ancrage.D)}` },
+    { x: ex + 0.3536 * platine.d_0, y: 0.3536 * platine.d_0, contenu: `Perçage, Ø d₀ = ${n(platine.d_0)}` },
+  ];
+  if (schema === 'appui-continu' && tr !== null) {
+    liste.push({ x: ex, y: 0.93 * Math.min(ancrage.D / 2 + tr.c, h / 2), contenu: `Contour efficace, c = ${n(tr.c)}` });
+  }
+  if (extremites) liste.push({ x: 0.35 * b, y: (plats.L ?? 0) / 2, contenu: `Ligne d'appui, L = ${n(plats.L ?? 0)}` });
+  const et = etiquettes(liste, b / 2 + 1.5 * fs, fs);
+  contenu.push(et.svg);
+
+  return svg(
+    {
+      x0: xH - 0.5 * fs - largeurTexte(texteH, fs),
+      y0: Math.min(yE - 1.4 * fs, et.y0),
+      x1: et.x1,
+      y1: Math.max(yB + 1.4 * fs, et.y1),
+    },
+    contenu,
+    "Vue en plan de la tête d'ancrage",
+    defs,
+  );
 }
 
 /**
@@ -182,11 +316,52 @@ export function coupeChaise(c: Extract<Calcul, { detail: 'chaise-ancrage' }>): s
   for (const s of [-1, 1]) {
     contenu.push(ligne('diffusion', ex + (s * ancrage.D) / 2, 0, ex + s * (ancrage.D / 2 + t), t));
   }
-  contenu.push(ligne('axe', ex, -1.25 * h_w, ex, t + hSupport));
+  // Tirant (diametre figuratif, sous le percage) et ecrou sur le bloc.
+  const dT = 0.75 * d_0;
+  const hEcrou = 0.8 * dT;
+  const lEcrou = 1.7 * dT;
+  const yHaut = -hBloc - hEcrou - 0.35 * dT;
+  const yBas = t + hSupport;
+  contenu.push(rect('acier', ex - dT / 2, yHaut, ex + dT / 2, yBas));
+  contenu.push(rect('acier', ex - lEcrou / 2, -hBloc - hEcrou, ex + lEcrou / 2, -hBloc));
+  contenu.push(ligne('axe', ex, yHaut - 0.15 * h_w, ex, yBas));
+
+  const fs = 0.045 * Math.max(1.3 * b, h_w + t + hSupport);
   // Le tirant tire le bloc vers le support.
-  contenu.push(fleche(ex, t + hSupport * 0.3, t + hSupport * 0.95, Math.max(8, 0.06 * b)));
+  contenu.push(fleche(ex, yBas + 0.4 * fs, yBas + 3 * fs, Math.max(8, 0.06 * b)));
+
+  // Cotes : h_w et t en chaine a gauche, e (entre axes des ames) dessus.
+  const bordGauche = -b / 2 - 0.15 * b;
+  const xG = bordGauche - 1.5 * fs;
+  const texteHw = indice('h', 'w', ` = ${n(h_w)}`, fs);
+  contenu.push(coteV(-h_w, 0, xG, -e / 2 - t_w / 2, -b / 2, texteHw, fs));
+  contenu.push(coteV(0, t, xG, -b / 2, -b / 2, `t = ${n(t)}`, fs));
+  const yE = Math.min(-h_w, yHaut - 0.15 * h_w) - 1.5 * fs;
+  contenu.push(coteH(-e / 2, e / 2, yE, -h_w, -h_w, `e = ${n(e)}`, fs));
+
+  // Etiquettes, en colonne a droite du support.
+  const pied = e / 2 + t_w / 2;
+  const liste: Etiquette[] = [
+    { x: e / 2, y: -0.75 * h_w, contenu: 'Âme' },
+    { x: ex + 0.3 * lEcrou, y: -hBloc - hEcrou / 2, contenu: 'Écrou' },
+    { x: ex + 0.4 * ancrage.D, y: -hBloc / 2, contenu: `Bloc d'ancrage, Ø D = ${n(ancrage.D)}` },
+    { x: pied + z / 3, y: -z / 3, contenu: `Cordon, a = ${n(soudure.a)}` },
+    { x: pied + z < b / 2 ? (pied + z + b / 2) / 2 : 0.45 * b, y: t / 2, contenu: 'Platine' },
+    { x: ex + dT / 2, y: t + 0.65 * hSupport, contenu: 'Tirant' },
+    appui.type === 'beton' && schema === 'appui-continu'
+      ? { x: b / 2 + 0.08 * b, y: t + 0.4 * hSupport, contenu: 'Support en béton' }
+      : { x: b / 2 + 0.08 * b, y: t + hSupport / 3, contenu: 'Support (appuis hors coupe)' },
+  ];
+  const et = etiquettes(liste, b / 2 + 0.15 * b + 1.5 * fs, fs);
+  contenu.push(et.svg);
+
   return svg(
-    { x0: -b / 2 - 0.15 * b, y0: -1.25 * h_w, x1: b / 2 + 0.15 * b, y1: t + hSupport },
+    {
+      x0: xG - 0.5 * fs - largeurTexte(texteHw, fs),
+      y0: Math.min(yE - 1.4 * fs, et.y0),
+      x1: et.x1,
+      y1: Math.max(yBas + 3 * fs, et.y1),
+    },
     contenu,
     "Coupe de la tête d'ancrage",
   );
@@ -336,14 +511,14 @@ export function dessinsDuCalcul(c: Calcul): Dessin[] {
           svg: planChaise(c),
           legende:
             c.modele.donnees.assemblage.schema === 'appui-continu'
-              ? "Âmes en coupe, couronne d'appui, perçage. Tirets : contour efficace du tronçon en té (couronne et âmes élargies de c), écrêté à la platine."
-              : "Âmes en coupe, couronne d'appui, perçage. Traits forts : lignes d'appui, à la portée L.",
+              ? "Cotes en mm. Tirets : contour efficace du tronçon en té (couronne et âmes élargies de c), écrêté à la platine."
+              : "Cotes en mm. Traits forts : lignes d'appui, à la portée L.",
         },
         {
           titre: 'Coupe',
           svg: coupeChaise(c),
           legende:
-            "Platine sur le support, âmes soudées sur sa face libre, bloc d'ancrage entre elles. Tirets : diffusion à 45 degrés de la couronne dans l'épaisseur.",
+            "Coupe par l'axe du tirant, cotes en mm ; le diamètre du tirant est figuratif. Tirets : diffusion à 45 degrés de la couronne dans l'épaisseur. Flèche : effort du tirant.",
         },
       ];
     case 'te':
