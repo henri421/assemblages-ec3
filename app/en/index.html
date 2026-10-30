@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f7f6" />
+    <link rel="icon" href="../icone.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../icone-192.png" />
+    <title>Steel connections — welded connections, EN 1993-1-8</title>
+  </head>
+  <body>
+    <nav class="barre" aria-label="suite of tools">
+      <div class="barre-corps">
+        <span class="barre-nom">EC3 &middot; Steel</span>
+        <div class="barre-actions">
+          <a class="barre-lien" href="https://henri421.github.io/WebAedificium/" target="_blank" rel="noopener"
+            >Calculation tools &#8599;</a
+          >
+          <a class="barre-langue" href="../" hreflang="fr" lang="fr" aria-label="Version française">FR</a>
+        </div>
+      </div>
+    </nav>
+
+    <header>
+      <h1>Steel connections</h1>
+      <p class="sous-titre">
+        Welded connections and bearing plates of anchor heads — EN 1993-1-8:2005, fillet welds 4.5.3, T-stub 6.2.5,
+        lamellar tearing EN 1993-1-10.
+      </p>
+    </header>
+
+    <main>
+      <section id="saisie" aria-label="input">
+        <label class="choix-outil"
+          ><span>Detail</span>
+          <select data-role="outil"></select>
+        </label>
+        <p class="description" data-role="description"></p>
+        <form id="formulaire" autocomplete="off" data-role="formulaire"></form>
+        <div class="assistance-bloc" data-role="assistance" hidden>
+          <h2>Assistance</h2>
+          <div data-role="assistance-corps"></div>
+        </div>
+        <div class="boutons">
+          <button type="button" data-action="enregistrer">Save (JSON)</button>
+          <button type="button" data-action="ouvrir">Open…</button>
+          <button type="button" data-action="reinitialiser">Starting values</button>
+          <input type="file" accept="application/json,.json" data-role="fichier" hidden />
+        </div>
+        <p class="note">
+          No data leaves the browser: calculation, saving and reopening are local.
+        </p>
+      </section>
+
+      <section id="dessins" aria-label="drawings to scale">
+        <h2>Geometry</h2>
+        <div data-role="dessins-corps"></div>
+      </section>
+
+      <section id="resultat" aria-label="result">
+        <h2>Result</h2>
+        <p data-role="erreur" class="erreur" role="alert" hidden></p>
+        <div data-role="resultat-corps"></div>
+      </section>
+
+      <section id="sorties" aria-label="outputs">
+        <h2>Outputs</h2>
+        <div class="cartouche">
+          <label><span>Project</span><input type="text" data-role="projet" /></label>
+          <label><span>Element</span><input type="text" data-role="element" placeholder="empty = name of the detail" /></label>
+        </div>
+        <div class="boutons">
+          <button type="button" data-action="exporter-resultats">Results (CSV)</button>
+          <button type="button" data-action="exporter-note">Calculation note (printable HTML)</button>
+        </div>
+        <p class="note">
+          The note opens in a tab and prints to PDF from the browser; if opening is blocked, it is downloaded.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p data-role="limites"></p>
+    </footer>
+
+    <script type="module" src="../src/main.ts"></script>
+  </body>
+</html>

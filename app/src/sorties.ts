@@ -8,6 +8,7 @@
 
 import type { ElementNote, NoteDeCalcul, VerificationNote } from 'aedificium-ui';
 import { accentue } from './accents';
+import { trNote } from './textes';
 import { OUTILS, estVisible, FORMULAIRES, type Outil, type Valeurs } from './form';
 import { dessinsDuCalcul } from './draw';
 import { avertissements, hypotheses } from './hypotheses';
@@ -147,7 +148,8 @@ export function noteDuCalcul(
   ];
 
   const element = cartouche.element.trim();
-  return {
+  // En anglais (lot 8.8), la note est traduite ici, avant sa mise en HTML.
+  return trNote({
     cartouche: {
       projet: cartouche.projet,
       element: element === '' ? nom : element,
@@ -158,5 +160,5 @@ export function noteDuCalcul(
     sections: s,
     verifications,
     avertissements: avertissements(c).map(accentue),
-  };
+  });
 }

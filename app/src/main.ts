@@ -8,7 +8,7 @@
  * affiche quand le calcul echoue.
  */
 
-import { blocsEnTexte, noteDeCalculHtml } from 'aedificium-ui';
+import { blocsEnTexte, definirLangue, langueDuDocument, noteDeCalculHtml } from 'aedificium-ui';
 import { notationHtml, notationTexte } from './accents';
 import { lireModele, serialiser, type Modele } from '../../src/index';
 import { assistance, calculer, type Calcul } from './calcul';
@@ -28,7 +28,10 @@ import { avertissements, hypotheses } from './hypotheses';
 import { blocsDEntree, noteDuCalcul } from './sorties';
 import { lireFichier, memoriser, ouvrirOuTelecharger, relire, telecharger } from './storage';
 import { blocsDuCalcul, htmlAssistance, messageDErreur, rendreResultat } from './view';
+import { tr, trBlocs, trHtml } from './textes';
 import './style.css';
+
+definirLangue(langueDuDocument(document));
 
 function exige<T extends Element>(selecteur: string): T {
   const trouve = document.querySelector(selecteur);
@@ -55,7 +58,7 @@ const saisies = new Map<Outil, Valeurs>();
 let outil: Outil = 'chaise-ancrage';
 let dernier: Calcul | null = null;
 
-choixOutil.innerHTML = OUTILS.map((o) => `<option value="${o.id}">${notationTexte(o.nom)}</option>`).join('');
+choixOutil.innerHTML = trHtml(OUTILS.map((o) => `<option value="${o.id}">${notationTexte(o.nom)}</option>`).join(''));
 
 function valeurs(): Valeurs {
   let v = saisies.get(outil);
@@ -69,8 +72,9 @@ function valeurs(): Valeurs {
 /** Construit le formulaire du detail courant depuis son schema. */
 function construireFormulaire(): void {
   const v = valeurs();
-  description.textContent = notationTexte(OUTILS.find((o) => o.id === outil)?.description ?? '');
-  formulaire.innerHTML = FORMULAIRES[outil]
+  description.textContent = tr(notationTexte(OUTILS.find((o) => o.id === outil)?.description ?? ''));
+  formulaire.innerHTML = trHtml(
+    FORMULAIRES[outil]
     .map((g, i) => {
       const champs = g.champs
         .map((c) => {
@@ -88,13 +92,14 @@ function construireFormulaire(): void {
         .join('');
       return `<fieldset data-groupe="${i}"><legend>${notationHtml(g.titre)}</legend>${champs}</fieldset>`;
     })
-    .join('');
+    .join(''),
+  );
   for (const el of Array.from(formulaire.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-champ]'))) {
     const cle = el.dataset.champ ?? '';
     if (el instanceof HTMLInputElement && el.type === 'checkbox') el.checked = v[cle] === 'oui';
     else el.value = v[cle] ?? '';
   }
-  limites.textContent = notationTexte(`Hypothèses et limites : ${hypotheses(outil).join(' ')}`);
+  limites.textContent = tr(notationTexte(`Hypothèses et limites : ${hypotheses(outil).join(' ')}`));
   ajusterVisibilite();
 }
 
@@ -121,7 +126,7 @@ function lireChamps(): void {
 }
 
 function afficherErreur(message: string): void {
-  banniereErreur.textContent = notationTexte(message);
+  banniereErreur.textContent = tr(notationTexte(message));
   banniereErreur.hidden = false;
 }
 
@@ -138,7 +143,7 @@ function afficherAssistance(modele: Modele | null): void {
     d = null;
   }
   blocAssistance.hidden = d === null;
-  corpsAssistance.innerHTML = htmlAssistance(d);
+  corpsAssistance.innerHTML = trHtml(htmlAssistance(d));
 }
 
 /**
@@ -160,15 +165,15 @@ function rafraichir(): void {
   afficherAssistance(lecture.modele);
   try {
     const c = calculer(lecture.modele);
-    corpsDessins.innerHTML = dessinsDuCalcul(c)
+    corpsDessins.innerHTML = trHtml(dessinsDuCalcul(c)
       .map(
         (d, i) =>
           `<figure><figcaption>${notationHtml(d.titre)}</figcaption>${d.svg}<p class="legende">${notationHtml(d.legende)}</p>` +
           `<button type="button" data-action="exporter-dessin" data-dessin="${i}">${notationHtml(d.titre)} (SVG)</button></figure>`
       )
-      .join('');
+      .join(''));
     const alertes = avertissements(c).map((a) => `<p class="alerte">${notationHtml(a)}</p>`).join('');
-    corpsResultat.innerHTML = alertes + rendreResultat(c);
+    corpsResultat.innerHTML = trHtml(alertes + rendreResultat(c));
     dernier = c;
     memoriser(serialiser(lecture.modele));
     effacerErreur();
@@ -270,10 +275,10 @@ document.addEventListener('click', (evenement) => {
   if (action === 'exporter-dessin') {
     const i = Number(cible.dataset.dessin);
     const d = dessinsDuCalcul(c)[i];
-    if (d !== undefined) telecharger(`${baseDeNom(c)}-${i + 1}.svg`, svgAutonome(d.svg), 'image/svg+xml;charset=utf-8');
+    if (d !== undefined) telecharger(`${baseDeNom(c)}-${i + 1}.svg`, svgAutonome(trHtml(d.svg)), 'image/svg+xml;charset=utf-8');
   } else if (action === 'exporter-resultats') {
     const blocs = [...blocsDEntree(outil, valeurs()), ...blocsDuCalcul(c)];
-    telecharger(`${baseDeNom(c)}-resultats.csv`, resultatsEnCsv(blocsEnTexte(blocs)), 'text/csv;charset=utf-8');
+    telecharger(`${baseDeNom(c)}-resultats.csv`, resultatsEnCsv(blocsEnTexte(trBlocs(blocs))), 'text/csv;charset=utf-8');
   } else if (action === 'exporter-note') {
     exporterNote(c);
   }
