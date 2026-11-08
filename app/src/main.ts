@@ -8,6 +8,7 @@
  * affiche quand le calcul echoue.
  */
 
+import { brancherFeuilles, type BarreFeuilles, type Json } from 'aedificium-ui';
 import { blocsEnTexte, definirLangue, langueDuDocument, noteDeCalculHtml } from 'aedificium-ui';
 import { notationHtml, notationTexte } from './accents';
 import { lireModele, serialiser, type Modele } from '../../src/index';
@@ -154,6 +155,12 @@ function afficherAssistance(modele: Modele | null): void {
  * la saisie illisible, et un resultat perime sous une erreur bien visible
  * vaut mieux qu'un ecran blanc.
  */
+/** Feuilles de calcul d'un projet de la suite. */
+let barre: BarreFeuilles | null = null;
+
+/** Dernier modele valide : la feuille ne recoit jamais une saisie en cours fautive. */
+let modeleValide: Modele | null = null;
+
 function rafraichir(): void {
   lireChamps();
   ajusterVisibilite();
@@ -175,7 +182,9 @@ function rafraichir(): void {
     const alertes = avertissements(c).map((a) => `<p class="alerte">${notationHtml(a)}</p>`).join('');
     corpsResultat.innerHTML = trHtml(alertes + rendreResultat(c));
     dernier = c;
-    memoriser(serialiser(lecture.modele));
+    modeleValide = lecture.modele;
+    if (barre?.dansUnProjet()) barre.signaler();
+    else memoriser(serialiser(lecture.modele));
     effacerErreur();
   } catch (erreur) {
     afficherErreur(messageDErreur(erreur));
@@ -305,6 +314,17 @@ entreeFichier.addEventListener('change', () => {
 choixOutil.addEventListener('change', () => changerOutil(choixOutil.value as Outil));
 formulaire.addEventListener('input', rafraichir);
 formulaire.addEventListener('change', rafraichir);
+
+barre = brancherFeuilles({
+  app: 'assemblages-ec3',
+  nomApp: exige<HTMLElement>('header h1').textContent ?? 'assemblages-ec3',
+  conteneur: exige<HTMLElement>('[data-role="feuilles"]'),
+  lire: () => (modeleValide === null ? null : (JSON.parse(serialiser(modeleValide)) as Json)),
+  charger: (d) => {
+    if (d === null) changerOutil('chaise-ancrage');
+    else chargerModele(lireModele(JSON.stringify(d)));
+  },
+});
 
 // Demarrage : un detail demande dans l'adresse (?detail=te), sinon le dernier
 // modele memorise, sinon la tete d'ancrage de reference.
