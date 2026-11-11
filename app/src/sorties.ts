@@ -21,6 +21,7 @@ import {
   type Bloc,
 } from './view';
 import type { Calcul } from './calcul';
+import { VERSION_OUTIL } from './version';
 
 /** Entites HTML courantes des libelles de formulaire, en texte brut. */
 const ENTITES: Readonly<Record<string, string>> = {
@@ -151,6 +152,7 @@ export function noteDuCalcul(
   // En anglais (lot 8.8), la note est traduite ici, avant sa mise en HTML.
   return trNote({
     cartouche: {
+      version: VERSION_OUTIL,
       projet: cartouche.projet,
       element: element === '' ? nom : element,
       date: cartouche.date,
