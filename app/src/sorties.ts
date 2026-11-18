@@ -22,6 +22,9 @@ import {
 } from './view';
 import type { Calcul } from './calcul';
 import { VERSION_OUTIL } from './version';
+import { lireAnnexe, traduireSource } from 'aedificium-ui';
+import { COEFS, avertissementDeLAnnexe, profilDeCalcul, type Coefs, type ProfilAnnexe } from './annexe';
+import { lireNombre } from './format';
 
 /** Entites HTML courantes des libelles de formulaire, en texte brut. */
 const ENTITES: Readonly<Record<string, string>> = {
@@ -95,6 +98,27 @@ function enTableau(t: { titre: string; entetes: string[]; lignes: string[][] }):
   return { type: 'tableau', titre: t.titre, entetes: t.entetes, lignes: t.lignes.map((l) => l.map(accentue)) };
 }
 
+/** Coefficients saisis, lus du formulaire ; un champ masque ou vide reste absent. */
+function coefsDeValeurs(v: Valeurs): Coefs {
+  const c: Coefs = {};
+  for (const k of COEFS) {
+    const x = lireNombre(v[k] ?? '');
+    if (x !== null) c[k] = x;
+  }
+  return c;
+}
+
+/** Bloc des coefficients : chaque ligne porte la source de sa valeur, traduite a la sortie. */
+function blocCoefficients(b: Bloc, profil: ProfilAnnexe): Bloc {
+  return {
+    ...b,
+    lignes: b.lignes.map((l) => {
+      const cle = COEFS.find((k) => k === l.symbole);
+      return cle === undefined ? l : { ...l, libelle: `${l.libelle} : ${traduireSource(profil.valeurs[cle].source)}` };
+    }),
+  };
+}
+
 /**
  * La note de calcul, rangee dans les sections de la note commune
  * d aedificium-ui. Aucun verdict global : les conclusions sont le tableau des
@@ -114,7 +138,9 @@ export function noteDuCalcul(
     charges: [] as ElementNote[],
     calculs: blocsDuCalcul(c).map(enBloc),
   };
-  for (const b of blocsDEntree(outil, v)) s[sectionDuGroupe(b.titre)].push(enBloc(b));
+  const annexe = lireAnnexe(v.annexe);
+  const profil = profilDeCalcul(annexe, coefsDeValeurs(v));
+  for (const b of blocsDEntree(outil, v)) s[sectionDuGroupe(b.titre)].push(enBloc(b.titre === 'Coefficients' ? blocCoefficients(b, profil) : b));
   for (const d of dessinsDuCalcul(c)) s.geometrie.push({ type: 'figure', svg: d.svg, legende: `${d.titre} : ${accentue(d.legende)}` });
 
   const organes = tableauOrganes(c);
@@ -149,18 +175,22 @@ export function noteDuCalcul(
   ];
 
   const element = cartouche.element.trim();
+  const lu = annexe === 'lu';
   // En anglais (lot 8.8), la note est traduite ici, avant sa mise en HTML.
-  return trNote({
+  const note = trNote({
     cartouche: {
       version: VERSION_OUTIL,
       projet: cartouche.projet,
       element: element === '' ? nom : element,
       date: cartouche.date,
-      norme: 'EN 1993-1-8:2005',
+      norme: lu ? 'EN 1993-1-8:2005, ILNAS-EN 1993-1-8/AN-LU:2020' : 'EN 1993-1-8:2005',
       outil: 'assemblages-ec3',
     },
     sections: s,
     verifications,
     avertissements: avertissements(c).map(accentue),
   });
+  // L'avertissement de l'annexe luxembourgeoise est en tete ; il est deja dans la langue de la sortie.
+  const aviso = avertissementDeLAnnexe(annexe);
+  return aviso === '' ? note : { ...note, avertissements: [aviso, ...note.avertissements] };
 }

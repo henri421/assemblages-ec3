@@ -12,13 +12,14 @@
 import {
   CLASSES_BOULON,
   DIAMETRES_BOULON,
-  ec3Recommande,
   type ClasseBoulon,
   type DiametreBoulon,
   type Modele,
   type ProfilEC3,
 } from '../../src/index';
+import { lireAnnexe } from 'aedificium-ui';
 import { lireNombre } from './format';
+import { COEFS, profilDeCalcul, profilEC3, type Coefs } from './annexe';
 
 export type Outil = 'chaise-ancrage' | 'te' | 'cruciforme' | 'angle' | 'recouvrement' | 'profile-platine' | 'eclissage-boulonne';
 
@@ -119,14 +120,31 @@ const GROUPE_SOUDAGE: Groupe = {
   ],
 };
 
+/**
+ * Annexe nationale et coefficients partiels. Le titre reste « Coefficients » : la
+ * note et ses tests le reconnaissent. Les coefficients sont ceux du profil du noyau,
+ * prerempli par l'annexe et modifiables ; l'annexe est le premier champ du groupe.
+ */
 function groupeCoefficients(avecBeton: boolean): Groupe {
   return {
     titre: 'Coefficients',
     champs: [
-      nombre('gamma_M0', '&gamma;<sub>M0</sub>', '-'),
-      nombre('gamma_M1', '&gamma;<sub>M1</sub>', '-'),
-      nombre('gamma_M2', '&gamma;<sub>M2</sub>', '-'),
-      ...(avecBeton ? [nombre('gamma_c', '&gamma;<sub>c</sub> (béton)', '-', { visible: (v: Valeurs) => v.type_appui === 'beton' })] : []),
+      {
+        cle: 'annexe',
+        libelle: 'Annexe nationale',
+        unite: '',
+        type: 'choix',
+        options: [
+          ['recommande', 'Valeurs recommandées'],
+          ['lu', 'Luxembourg (AN-LU:2020, à vérifier)'],
+        ],
+      },
+      nombre('gamma_M0', '&gamma;<sub>M0</sub> (§6.1(1))', '-'),
+      nombre('gamma_M1', '&gamma;<sub>M1</sub> (§6.1(1))', '-'),
+      nombre('gamma_M2', '&gamma;<sub>M2</sub> (tableau 2.1)', '-'),
+      ...(avecBeton
+        ? [nombre('gamma_c', '&gamma;<sub>c</sub> (béton, tableau 2.1N)', '-', { visible: (v: Valeurs) => v.type_appui === 'beton' })]
+        : []),
     ],
   };
 }
@@ -398,7 +416,7 @@ export const FORMULAIRES: Record<Outil, Groupe[]> = {
   'eclissage-boulonne': ECLISSAGE,
 };
 
-const COEFFICIENTS: Valeurs = { gamma_M0: '1', gamma_M1: '1', gamma_M2: '1,25', gamma_c: '1,5' };
+const COEFFICIENTS: Valeurs = { annexe: 'recommande', gamma_M0: '1', gamma_M1: '1', gamma_M2: '1,25', gamma_c: '1,5' };
 const MATERIAU: Valeurs = { nuance: 'S235', qualiteZ: 'aucune' };
 const SOUDAGE: Valeurs = { forme: 'angle-multipasse', bridage: 'faible', prechauffage: 'non' };
 
@@ -497,14 +515,14 @@ export function lireSaisie(outil: Outil, v: Valeurs): Lecture {
   }
 }
 
-function profil(n: Record<string, number | undefined>): ProfilEC3 {
-  return {
-    ...ec3Recommande(),
-    gamma_M0: n.gamma_M0 ?? 1,
-    gamma_M1: n.gamma_M1 ?? 1,
-    gamma_M2: n.gamma_M2 ?? 1.25,
-    gamma_c: n.gamma_c ?? 1.5,
-  };
+/**
+ * Profil du noyau : celui de l'annexe choisie, les coefficients saisis (absents
+ * du formulaire : valeur de l'annexe) ; une valeur modifiee est marquee « imposée ».
+ */
+function profil(v: Valeurs, n: Record<string, number | undefined>): ProfilEC3 {
+  const saisis: Coefs = {};
+  for (const k of COEFS) saisis[k] = n[k];
+  return profilEC3(profilDeCalcul(lireAnnexe(v.annexe), saisis));
 }
 
 /** Un nombre exige (champ visible et non facultatif) : present par construction. */
@@ -574,7 +592,7 @@ function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefin
           ...(n.F_tk === undefined ? {} : { F_tk: n.F_tk }),
           ...(n.P_blocage === undefined ? {} : { P_blocage: n.P_blocage }),
         },
-        profil: profil(n),
+        profil: profil(v, n),
         conditionsSoudage,
         ...(n.delta_lim === undefined ? {} : { delta_lim: n.delta_lim }),
       },
@@ -605,7 +623,7 @@ function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefin
           M_hors: exige(n, 'M_hors'),
         },
         materiau,
-        profil: profil(n),
+        profil: profil(v, n),
         conditionsSoudage,
       },
     };
@@ -624,7 +642,7 @@ function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefin
         a: exige(n, 'a'),
         sollicitations: { N: exige(n, 'N'), V: exige(n, 'V'), M: exige(n, 'M') },
         materiau,
-        profil: profil(n),
+        profil: profil(v, n),
       },
     };
   }
@@ -653,7 +671,7 @@ function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefin
         p_2: n_2 > 1 ? exige(n, 'p_2') : 0,
         N: exige(n, 'N'),
         materiau,
-        profil: profil(n),
+        profil: profil(v, n),
       },
     };
   }
@@ -676,13 +694,13 @@ function construire(outil: Outil, v: Valeurs, n: Record<string, number | undefin
         M_z: exige(n, 'M_z'),
       },
       materiau,
-      profil: profil(n),
+      profil: profil(v, n),
       conditionsSoudage,
     },
   };
 }
 
-const texte = (x: number | undefined): string => (x === undefined ? '' : String(x).replace('.', ','));
+export const texte = (x: number | undefined): string => (x === undefined ? '' : String(x).replace('.', ','));
 const ouiNon = (b: boolean): string => (b ? 'oui' : 'non');
 
 /**

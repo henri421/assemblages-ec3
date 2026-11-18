@@ -20,11 +20,14 @@ import {
   OUTILS,
   estVisible,
   lireSaisie,
+  texte,
   valeursDepuisModele,
   valeursParDefaut,
   type Outil,
   type Valeurs,
 } from './form';
+import { COEFS, annexeDuFichier, avecAnnexe, avertissementDeLAnnexe, coefsDeLAnnexe } from './annexe';
+import { lireAnnexe, type AnnexeNationale } from 'aedificium-ui';
 import { avertissements, hypotheses } from './hypotheses';
 import { blocsDEntree, noteDuCalcul } from './sorties';
 import { lireFichier, memoriser, ouvrirOuTelecharger, relire, telecharger } from './storage';
@@ -48,6 +51,7 @@ const corpsAssistance = exige<HTMLElement>('[data-role="assistance-corps"]');
 const corpsDessins = exige<HTMLElement>('[data-role="dessins-corps"]');
 const corpsResultat = exige<HTMLElement>('[data-role="resultat-corps"]');
 const banniereErreur = exige<HTMLElement>('[data-role="erreur"]');
+const bandeauAnnexe = exige<HTMLElement>('[data-role="bandeau-annexe"]');
 const limites = exige<HTMLElement>('[data-role="limites"]');
 const entreeFichier = exige<HTMLInputElement>('[data-role="fichier"]');
 const champProjet = exige<HTMLInputElement>('[data-role="projet"]');
@@ -126,6 +130,24 @@ function lireChamps(): void {
   }
 }
 
+/**
+ * Changer d'annexe repremplit les coefficients de la nouvelle annexe ; chacun
+ * reste modifiable ensuite (une valeur changee est marquee imposee dans la note).
+ */
+function reprendreCoefficients(): void {
+  const v = valeurs();
+  const p = coefsDeLAnnexe(lireAnnexe(v.annexe));
+  for (const k of COEFS) v[k] = texte(p[k]);
+  construireFormulaire();
+}
+
+/** Bandeau de l'annexe luxembourgeoise : visible seulement avec le profil `lu`. */
+function montrerBandeauAnnexe(a: AnnexeNationale): void {
+  const message = avertissementDeLAnnexe(a);
+  bandeauAnnexe.textContent = message;
+  bandeauAnnexe.hidden = message === '';
+}
+
 function afficherErreur(message: string): void {
   banniereErreur.textContent = tr(notationTexte(message));
   banniereErreur.hidden = false;
@@ -160,10 +182,13 @@ let barre: BarreFeuilles | null = null;
 
 /** Dernier modele valide : la feuille ne recoit jamais une saisie en cours fautive. */
 let modeleValide: Modele | null = null;
+/** Annexe du dernier modele valide, enregistree avec lui. */
+let annexeValide: AnnexeNationale = 'recommande';
 
 function rafraichir(): void {
   lireChamps();
   ajusterVisibilite();
+  montrerBandeauAnnexe(lireAnnexe(valeurs().annexe));
   const lecture = lireSaisie(outil, valeurs());
   if (!lecture.ok) {
     afficherErreur(lecture.message);
@@ -183,8 +208,9 @@ function rafraichir(): void {
     corpsResultat.innerHTML = trHtml(alertes + rendreResultat(c));
     dernier = c;
     modeleValide = lecture.modele;
+    annexeValide = lireAnnexe(valeurs().annexe);
     if (barre?.dansUnProjet()) barre.signaler();
-    else memoriser(serialiser(lecture.modele));
+    else memoriser(avecAnnexe(serialiser(lecture.modele), annexeValide));
     effacerErreur();
   } catch (erreur) {
     afficherErreur(messageDErreur(erreur));
@@ -268,7 +294,7 @@ document.addEventListener('click', (evenement) => {
   if (action === 'enregistrer') {
     const lecture = lireSaisie(outil, valeurs());
     if (!lecture.ok) return afficherErreur(lecture.message);
-    telecharger(`assemblages-ec3-${outil}.json`, serialiser(lecture.modele), 'application/json;charset=utf-8');
+    telecharger(`assemblages-ec3-${outil}.json`, avecAnnexe(serialiser(lecture.modele), lireAnnexe(valeurs().annexe)), 'application/json;charset=utf-8');
     return;
   }
   if (action === 'ouvrir') return entreeFichier.click();
@@ -293,18 +319,24 @@ document.addEventListener('click', (evenement) => {
   }
 });
 
-/** Charge un modele relu : il remplace la saisie de son detail. */
-function chargerModele(m: Modele): void {
+/** Charge un modele relu : il remplace la saisie de son detail, annexe comprise. */
+function chargerModele(m: Modele, annexe: AnnexeNationale): void {
   const { outil: o, valeurs: v } = valeursDepuisModele(m);
+  v.annexe = annexe;
   saisies.set(o, v);
   changerOutil(o);
+}
+
+/** Charge un fichier de saisie (texte JSON). Un ancien fichier sans annexe donne `recommande`. */
+function chargerTexte(contenu: string): void {
+  chargerModele(lireModele(contenu), annexeDuFichier(contenu));
 }
 
 entreeFichier.addEventListener('change', () => {
   const fichier = entreeFichier.files?.[0];
   if (fichier === undefined) return;
   lireFichier(fichier)
-    .then((texte) => chargerModele(lireModele(texte)))
+    .then((contenu) => chargerTexte(contenu))
     .catch((e: unknown) => afficherErreur(e instanceof Error ? e.message : 'Fichier illisible.'))
     .finally(() => {
       entreeFichier.value = '';
@@ -313,16 +345,21 @@ entreeFichier.addEventListener('change', () => {
 
 choixOutil.addEventListener('change', () => changerOutil(choixOutil.value as Outil));
 formulaire.addEventListener('input', rafraichir);
-formulaire.addEventListener('change', rafraichir);
+formulaire.addEventListener('change', (evenement) => {
+  // Changer d'annexe repremplit les coefficients avant le nouveau calcul.
+  const cible = evenement.target;
+  if (cible instanceof HTMLSelectElement && cible.dataset.champ === 'annexe') reprendreCoefficients();
+  rafraichir();
+});
 
 barre = brancherFeuilles({
   app: 'assemblages-ec3',
   nomApp: exige<HTMLElement>('header h1').textContent ?? 'assemblages-ec3',
   conteneur: exige<HTMLElement>('[data-role="feuilles"]'),
-  lire: () => (modeleValide === null ? null : (JSON.parse(serialiser(modeleValide)) as Json)),
+  lire: () => (modeleValide === null ? null : (JSON.parse(avecAnnexe(serialiser(modeleValide), annexeValide)) as Json)),
   charger: (d) => {
     if (d === null) changerOutil('chaise-ancrage');
-    else chargerModele(lireModele(JSON.stringify(d)));
+    else chargerTexte(JSON.stringify(d));
   },
 });
 
@@ -336,7 +373,7 @@ if (demande !== null && OUTILS.some((o) => o.id === demande)) {
   demarre = true;
 } else if (memoire !== null) {
   try {
-    chargerModele(lireModele(memoire));
+    chargerTexte(memoire);
     demarre = true;
   } catch {
     demarre = false;

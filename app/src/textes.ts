@@ -26,6 +26,10 @@ const REGLES: ReadonlyArray<readonly [RegExp, string | ((...a: string[]) => stri
 /** Glossaire de morceaux, applique en une passe (le plus long d'abord), sur des mots entiers. */
 const MORCEAUX: Record<string, string> = {
   "Une nouvelle version est disponible. Recharger maintenant ?": "A new version is available. Reload now?",
+  "Luxembourg (AN-LU:2020, à vérifier)": "Luxembourg (AN-LU:2020, to be checked)",
+  "Valeurs recommandées": "Recommended values",
+  "Annex nationale": "National Annex",
+  "valeur imposée par l’utilisateur": "value imposed by the user",
   "Aucun calcul valide à exporter: corriger la saisie, puis réessayer.": "No valid calculation to export: correct the input, then try again.",
   "Hypothèses et limites": "Assumptions and limits",
   "Fichier illisible.": "Unreadable file.",
