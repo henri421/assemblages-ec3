@@ -215,7 +215,11 @@ describe('cablage', () => {
   });
 
   it('exporterNote passe par noteDuCalcul et la note commune ; plus de note locale dans export.ts', () => {
-    expect(main).toMatch(/noteDeCalculHtml\(\s*noteDuCalcul\(/);
+    // Depuis le bouton PDF (19/11/2026, Claude) : la note est batie une fois par
+    // noteDuCalcul, puis passee a la note commune HTML ou PDF.
+    expect(main).toMatch(/const noteCalc = noteDuCalcul\(/);
+    expect(main).toMatch(/noteDeCalculHtml\(noteCalc,/);
+    expect(main).toMatch(/telechargerNotePdf\(`[^`]*-note\.pdf`, noteCalc,/);
     expect(main).toMatch(/import\s*\{[^}]*noteDeCalculHtml[^}]*\}\s*from\s*'aedificium-ui'/);
     expect(exportTs).not.toMatch(/export function noteDeCalculHtml|export interface NoteDeCalcul/);
   });

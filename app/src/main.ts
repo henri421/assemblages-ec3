@@ -9,7 +9,7 @@
  */
 
 import { brancherFeuilles, type BarreFeuilles, type Json } from 'aedificium-ui';
-import { blocsEnTexte, definirLangue, langueDuDocument, noteDeCalculHtml } from 'aedificium-ui';
+import { blocsEnTexte, definirLangue, langueDuDocument, noteDeCalculHtml, telechargerNotePdf } from 'aedificium-ui';
 import { notationHtml, notationTexte } from './accents';
 import { lireModele, serialiser, type Modele } from '../../src/index';
 import { assistance, calculer, type Calcul } from './calcul';
@@ -273,16 +273,15 @@ function sansCalcul(): void {
   afficherErreur('Aucun calcul valide à exporter : corriger la saisie, puis réessayer.');
 }
 
-function exporterNote(c: Calcul): void {
-  const html = noteDeCalculHtml(
-    noteDuCalcul(outil, valeurs(), c, {
-      projet: champProjet.value,
-      element: champElement.value,
-      date: new Date().toISOString().slice(0, 10),
-    }),
-    STYLES_TRACE,
-  );
-  ouvrirOuTelecharger(`${baseDeNom(c)}-note.html`, html);
+function exporterNote(c: Calcul, pdf = false): void {
+  const noteCalc = noteDuCalcul(outil, valeurs(), c, {
+    projet: champProjet.value,
+    element: champElement.value,
+    date: new Date().toISOString().slice(0, 10),
+  });
+  // PDF construit au clic ; en cas d'echec, la note HTML prend le relais.
+  if (pdf) void telechargerNotePdf(`${baseDeNom(c)}-note.pdf`, noteCalc, STYLES_TRACE).catch(() => ouvrirOuTelecharger(`${baseDeNom(c)}-note.html`, noteDeCalculHtml(noteCalc, STYLES_TRACE)));
+  else ouvrirOuTelecharger(`${baseDeNom(c)}-note.html`, noteDeCalculHtml(noteCalc, STYLES_TRACE));
 }
 
 document.addEventListener('click', (evenement) => {
@@ -314,8 +313,8 @@ document.addEventListener('click', (evenement) => {
   } else if (action === 'exporter-resultats') {
     const blocs = [...blocsDEntree(outil, valeurs()), ...blocsDuCalcul(c)];
     telecharger(`${baseDeNom(c)}-resultats.csv`, resultatsEnCsv(blocsEnTexte(trBlocs(blocs))), 'text/csv;charset=utf-8');
-  } else if (action === 'exporter-note') {
-    exporterNote(c);
+  } else if (action === 'exporter-note' || action === 'exporter-note-pdf') {
+    exporterNote(c, action === 'exporter-note-pdf');
   }
 });
 
