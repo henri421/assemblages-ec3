@@ -67,6 +67,8 @@ export default defineConfig({
   // Vitest reutilise ce fichier : sans ce champ, le `root: 'app'` ci-dessus
   // s'appliquerait aussi aux tests, qui vivent hors de `app/`.
   test: {
+    // Tests d affichage lourds (jsdom) au-dela des 5 s par defaut sous charge.
+    testTimeout: 60_000,
     root: '.',
     exclude: ['**/node_modules/**', '**/dist/**', '.worktrees/**'],
   },
